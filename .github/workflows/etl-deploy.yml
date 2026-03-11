@@ -1,0 +1,68 @@
+name: ETL & Deploy
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  etl:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Vercel Login
+        run: vercel link --yes --token ${{ secrets.VERCEL_TOKEN }}
+
+      - name: Pull Vercel Environment
+        run: vercel env pull .env.local --environment=production --token ${{ secrets.VERCEL_TOKEN }}
+
+      - name: Install server dependencies
+        run: |
+          cd server
+          npm install
+
+      - name: Initialize Database
+        run: |
+          cd server
+          npm run db:init
+        env:
+          DATABASE_URL: ${{ secrets.VERCEL_POSTGRES_URL }}
+
+      - name: Run ETL Pipeline
+        run: |
+          cd server
+          npm run etl:run
+        env:
+          DATABASE_URL: ${{ secrets.VERCEL_POSTGRES_URL }}
+        continue-on-error: true
+
+  deploy:
+    needs: etl
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: --prod

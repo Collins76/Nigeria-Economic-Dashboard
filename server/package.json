@@ -7,8 +7,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "db:init": "tsx src/scripts/initDb.ts",
-    "etl:run": "tsx src/scripts/runEtl.ts",
-    "etl:schedule": "tsx src/scripts/scheduler.ts"
+    "etl:run": "tsx src/etl/etl.ts"
   },
   "dependencies": {
     "axios": "^1.6.7",

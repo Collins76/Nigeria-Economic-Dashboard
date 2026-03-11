@@ -45,8 +45,8 @@ export async function seedIndicators() {
   for (const ind of INDICATOR_DEFINITIONS) {
     await query(
       `INSERT INTO indicators (id, name, short_name, category, unit, frequency, source, source_url, description, positive_direction, color, last_updated, update_cadence)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12       ON CONFLICT (id), $13)
- DO UPDATE SET
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+       ON CONFLICT (id) DO UPDATE SET
          name = EXCLUDED.name,
          short_name = EXCLUDED.short_name,
          category = EXCLUDED.category,
@@ -85,6 +85,7 @@ export async function seedEvents() {
 export async function runETL(indicatorId?: string) {
   const startTime = Date.now();
   const jobName = indicatorId ? `etl_${indicatorId}` : 'etl_all';
+  let hasUpdates = false;
   
   try {
     await query(
@@ -114,6 +115,7 @@ export async function runETL(indicatorId?: string) {
       );
 
       logger.info(`ETL completed for ${indicatorId}: ${data.length} records`);
+      hasUpdates = data.length > 0;
     } else {
       let totalRecords = 0;
       for (const ind of INDICATOR_DEFINITIONS) {
@@ -132,6 +134,7 @@ export async function runETL(indicatorId?: string) {
         }
       }
       logger.info(`ETL completed: ${totalRecords} total records`);
+      hasUpdates = totalRecords > 0;
     }
 
     await query(
@@ -146,6 +149,9 @@ export async function runETL(indicatorId?: string) {
       [error.message, jobName]
     );
   }
+
+  console.log(`::set-output name=has_updates::${hasUpdates}`);
+  return hasUpdates;
 }
 
 runETL()
