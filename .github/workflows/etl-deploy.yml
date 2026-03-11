@@ -19,8 +19,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: npm
-          cache-dependency-path: server/package-lock.json
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
@@ -28,8 +26,22 @@ jobs:
       - name: Vercel Login
         run: vercel link --yes --token ${{ secrets.VERCEL_TOKEN }}
 
-      - name: Pull Vercel Environment
-        run: vercel env pull .env.local --environment=production --token ${{ secrets.VERCEL_TOKEN }}
+      - name: Get Postgres Connection String
+        id: get-db
+        run: |
+          echo "Getting Vercel Postgres credentials..."
+          # Install jq for parsing JSON
+          sudo apt-get install -y jq
+          
+          # Get the storage info
+          vercel storage ls --token ${{ secrets.VERCEL_TOKEN }} 2>/dev/null || true
+          
+          # The POSTGRES_URL should be in the project env
+          echo "Fetching database URL from Vercel..."
+          
+          # Create a simple .env file with the database URL
+          echo "POSTGRES_URL=${{ secrets.VERCEL_POSTGRES_URL }}" > .env.local
+          cat .env.local
 
       - name: Install server dependencies
         run: |
@@ -39,6 +51,7 @@ jobs:
       - name: Initialize Database
         run: |
           cd server
+          export $(cat ../.env.local | grep -v '^#' | xargs)
           npm run db:init
         env:
           DATABASE_URL: ${{ secrets.VERCEL_POSTGRES_URL }}
@@ -46,10 +59,10 @@ jobs:
       - name: Run ETL Pipeline
         run: |
           cd server
+          export $(cat ../.env.local | grep -v '^#' | xargs)
           npm run etl:run
         env:
           DATABASE_URL: ${{ secrets.VERCEL_POSTGRES_URL }}
-        continue-on-error: true
 
   deploy:
     needs: etl

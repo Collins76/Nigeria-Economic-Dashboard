@@ -5,8 +5,19 @@ dotenv.config();
 
 const { Pool } = pg;
 
+function getDatabaseUrl(): string {
+  // Use DATABASE_URL from Vercel, fallback to individual env vars
+  const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  
+  if (!dbUrl) {
+    throw new Error('No database URL found. Please set DATABASE_URL or POSTGRES_URL');
+  }
+  
+  return dbUrl;
+}
+
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: getDatabaseUrl(),
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   max: 20,
   idleTimeoutMillis: 30000,

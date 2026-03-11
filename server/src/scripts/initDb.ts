@@ -1,20 +1,33 @@
 import pg from 'pg';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-dotenv.config();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
 
 const { Pool } = pg;
 
 async function initDatabase() {
   console.log('Initializing database...');
   
+  const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  
+  console.log('Database URL present:', !!dbUrl);
+  
+  if (!dbUrl) {
+    console.error('No database URL found. Please set DATABASE_URL or POSTGRES_URL');
+    process.exit(1);
+  }
+  
   const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    connectionString: dbUrl,
+    ssl: { rejectUnauthorized: false },
   });
 
   try {
     const client = await pool.connect();
+    console.log('Connected to database successfully');
     
     // Create indicators table
     await client.query(`
@@ -87,17 +100,6 @@ async function initDatabase() {
       )
     `);
     console.log('✓ etl_logs table created');
-
-    // Create api_cache table
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS api_cache (
-        key VARCHAR(100) PRIMARY KEY,
-        data JSONB NOT NULL,
-        expires_at TIMESTAMP NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    console.log('✓ api_cache table created');
 
     client.release();
     await pool.end();

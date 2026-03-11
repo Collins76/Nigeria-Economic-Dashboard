@@ -88,6 +88,10 @@ export async function runETL(indicatorId?: string) {
   let hasUpdates = false;
   
   try {
+    // First seed indicators
+    await seedIndicators();
+    await seedEvents();
+    
     await query(
       `INSERT INTO etl_logs (job_name, status, records_processed, started_at)
        VALUES ($1, 'running', 0, CURRENT_TIMESTAMP)
