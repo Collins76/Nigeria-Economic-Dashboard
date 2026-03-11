@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -45,11 +45,11 @@ jobs:
           export $(cat ../.env.local | grep -v '^#' | xargs)
           npm run etl:run
 
-      - name: Update last run timestamp
+      - name: Update timestamp to trigger Vercel
         run: |
-          echo "Last ETL run: $(date -u +"%Y-%m-%d %H:%M UTC")" > .etl-last-run
+          date -u +"%Y-%m-%d %H:%M UTC" > .etl-last-run
           git add .etl-last-run
-          git config --global user.name "ETL Bot"
-          git config --global user.email "etl@github.com"
-          git commit -m "chore: ETL data update $(date -u +'%Y-%m-%d')" || echo "No changes to commit"
-          git push
+          git config user.name "ETL Bot"
+          git config user.email "etl@github.com"
+          git commit -m "chore: ETL data update $(date -u +'%Y-%m-%d')" || true
+          git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/Collins76/Nigeria-Economic-Dashboard.git main
