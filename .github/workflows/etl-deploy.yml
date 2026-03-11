@@ -14,6 +14,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -24,7 +27,6 @@ jobs:
         run: |
           echo "POSTGRES_URL=${{ secrets.VERCEL_POSTGRES_URL }}" > .env.local
           echo "DATABASE_URL=${{ secrets.VERCEL_POSTGRES_URL }}" >> .env.local
-          cat .env.local
 
       - name: Install server dependencies
         run: |
@@ -43,18 +45,11 @@ jobs:
           export $(cat ../.env.local | grep -v '^#' | xargs)
           npm run etl:run
 
-  deploy:
-    needs: etl
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: --prod
+      - name: Update last run timestamp
+        run: |
+          echo "Last ETL run: $(date -u +"%Y-%m-%d %H:%M UTC")" > .etl-last-run
+          git add .etl-last-run
+          git config --global user.name "ETL Bot"
+          git config --global user.email "etl@github.com"
+          git commit -m "chore: ETL data update $(date -u +'%Y-%m-%d')" || echo "No changes to commit"
+          git push
