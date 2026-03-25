@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nigeria Economic Dashboard</title>
+<meta name="description" content="Interactive dashboard tracking Nigeria's key economic indicators — GDP, inflation, exchange rates, trade, fiscal data, and market indices.">
+
+<!-- Chart.js + plugins -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.1.0/dist/chartjs-plugin-annotation.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js"></script>
+
+<!-- Export libs -->
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<style>
+/* ===== CSS VARIABLES / THEME ===== */
+:root {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border: #e2e8f0;
+  --border-hover: #cbd5e1;
+  --accent: #0d6f3d;
+  --accent-light: #dcfce7;
+  --accent-hover: #15803d;
+  --negative: #dc2626;
+  --negative-light: #fef2f2;
+  --warning: #f59e0b;
+  --warning-light: #fffbeb;
+  --info: #2563eb;
+  --info-light: #eff6ff;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.05);
+  --radius: 8px;
+  --radius-lg: 12px;
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --mono: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  --transition: 150ms ease;
+  --kpi-positive: #16a34a;
+  --kpi-negative: #dc2626;
+  --chart-1: #0d6f3d;
+  --chart-2: #2563eb;
+  --chart-3: #9333ea;
+  --chart-4: #ea580c;
+  --chart-5: #0891b2;
+  --chart-6: #be185d;
+  --chart-7: #854d0e;
+  --chart-8: #4f46e5;
+}
+
+[data-theme="dark"] {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border: #334155;
+  --border-hover: #475569;
+  --accent: #22c55e;
+  --accent-light: #052e16;
+  --accent-hover: #4ade80;
+  --negative: #f87171;
+  --negative-light: #450a0a;
+  --warning: #fbbf24;
+  --warning-light: #451a03;
+  --info: #60a5fa;
+  --info-light: #172554;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5);
+  --kpi-positive: #4ade80;
+  --kpi-negative: #f87171;
+  --chart-1: #4ade80;
+  --chart-2: #60a5fa;
+  --chart-3: #c084fc;
+  --chart-4: #fb923c;
+  --chart-5: #22d3ee;
+  --chart-6: #f472b6;
+  --chart-7: #fbbf24;
+  --chart-8: #818cf8;
+}
+
+[data-theme="high-contrast"] {
+  --bg-primary: #000000;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #333333;
+  --text-primary: #ffffff;
+  --text-secondary: #e0e0e0;
+  --text-muted: #b0b0b0;
+  --border: #555555;
+  --border-hover: #777777;
+  --accent: #00ff88;
+  --accent-light: #003320;
+  --negative: #ff4444;
+  --negative-light: #330000;
+  --kpi-positive: #00ff88;
+  --kpi-negative: #ff4444;
+}
+
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  font-family: var(--font);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  transition: background var(--transition), color var(--transition);
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+button { cursor: pointer; font-family: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-tertiary); }
+::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 4px; }
+
+/* ===== LAYOUT ===== */
+.dashboard { max-width: 1440px; margin: 0 auto; padding: 0 20px 40px; }
+
+/* ===== HEADER ===== */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 0; border-bottom: 1px solid var(--border);
+  margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+}
+.header-left { display: flex; align-items: center; gap: 12px; }
+.header-logo {
+  width: 40px; height: 40px; border-radius: 8px;
+  background: var(--accent); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 18px;
+}
+.header-title { font-size: 1.25rem; font-weight: 700; }
+.header-subtitle { font-size: 0.8rem; color: var(--text-muted); }
+.header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: var(--radius);
+  font-size: 0.8rem; font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary); color: var(--text-primary);
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--border-hover); box-shadow: var(--shadow-sm); }
+.btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-sm { padding: 4px 10px; font-size: 0.75rem; }
+.btn-icon { padding: 7px; min-width: 34px; justify-content: center; }
+.btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+/* ===== TABS ===== */
+.tabs {
+  display: flex; gap: 2px; padding: 3px;
+  background: var(--bg-tertiary); border-radius: var(--radius);
+  margin-bottom: 20px; overflow-x: auto;
+}
+.tab {
+  padding: 8px 16px; border-radius: 6px;
+  font-size: 0.8rem; font-weight: 500;
+  border: none; background: transparent;
+  color: var(--text-secondary); cursor: pointer;
+  transition: all var(--transition); white-space: nowrap;
+}
+.tab:hover { color: var(--text-primary); background: var(--bg-secondary); }
+.tab.active { background: var(--bg-secondary); color: var(--text-primary); box-shadow: var(--shadow-sm); font-weight: 600; }
+
+/* ===== FILTER BAR ===== */
+.filter-bar {
+  display: flex; gap: 10px; margin-bottom: 20px;
+  flex-wrap: wrap; align-items: center;
+}
+.filter-group { display: flex; align-items: center; gap: 6px; }
+.filter-label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+select, input[type="date"], input[type="number"] {
+  padding: 7px 12px; border: 1px solid var(--border);
+  border-radius: var(--radius); background: var(--bg-secondary);
+  color: var(--text-primary); font-size: 0.8rem;
+  font-family: inherit; transition: border var(--transition);
+}
+select:hover, input:hover { border-color: var(--border-hover); }
+select:focus, input:focus { border-color: var(--accent); outline: none; }
+
+/* ===== KPI ROW ===== */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px; margin-bottom: 24px;
+}
+.kpi-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  cursor: pointer;
+  transition: all var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card:hover { border-color: var(--accent); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.kpi-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.kpi-card.alert-red { border-left: 4px solid var(--negative); }
+.kpi-card.alert-yellow { border-left: 4px solid var(--warning); }
+.kpi-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.kpi-name { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.03em; }
+.kpi-badge {
+  font-size: 0.65rem; padding: 2px 6px; border-radius: 4px;
+  font-weight: 600;
+}
+.kpi-badge.up { background: var(--accent-light); color: var(--kpi-positive); }
+.kpi-badge.down { background: var(--negative-light); color: var(--kpi-negative); }
+.kpi-value { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px; }
+.kpi-change { font-size: 0.75rem; display: flex; align-items: center; gap: 4px; }
+.kpi-change.positive { color: var(--kpi-positive); }
+.kpi-change.negative { color: var(--kpi-negative); }
+.kpi-sparkline { height: 32px; margin-top: 8px; }
+.kpi-sparkline canvas { width: 100% !important; height: 32px !important; }
+.kpi-updated { font-size: 0.65rem; color: var(--text-muted); margin-top: 6px; }
+
+/* ===== PANELS & CARDS ===== */
+.panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.panel-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+}
+.panel-title { font-size: 0.95rem; font-weight: 700; }
+.panel-subtitle { font-size: 0.75rem; color: var(--text-muted); }
+.panel-actions { display: flex; gap: 6px; }
+.panel-body { padding: 18px; }
+.chart-container { position: relative; width: 100%; min-height: 350px; }
+.chart-container canvas { width: 100% !important; }
+
+/* ===== GRID LAYOUTS ===== */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+/* ===== DATA TABLE ===== */
+.data-table-wrap { overflow-x: auto; max-height: 500px; overflow-y: auto; }
+.data-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.data-table th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--bg-tertiary); padding: 10px 14px;
+  text-align: left; font-weight: 600; font-size: 0.75rem;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--text-secondary); border-bottom: 2px solid var(--border);
+  cursor: pointer; user-select: none; white-space: nowrap;
+}
+.data-table th:hover { color: var(--text-primary); }
+.data-table th .sort-arrow { margin-left: 4px; opacity: 0.4; }
+.data-table th.sorted .sort-arrow { opacity: 1; color: var(--accent); }
+.data-table td {
+  padding: 8px 14px; border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.data-table tr:hover td { background: var(--bg-tertiary); }
+.data-table .num { text-align: right; font-family: var(--mono); font-size: 0.78rem; }
+
+/* ===== NARRATIVE ===== */
+.narrative {
+  padding: 14px 18px; background: var(--bg-tertiary);
+  border-radius: var(--radius); font-size: 0.85rem;
+  line-height: 1.7; color: var(--text-secondary);
+  border-left: 3px solid var(--accent); margin-bottom: 16px;
+}
+
+/* ===== MODAL / DRILLDOWN ===== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  z-index: 1000; display: flex; align-items: center; justify-content: center;
+  padding: 20px; opacity: 0; visibility: hidden; transition: all 200ms;
+}
+.modal-overlay.open { opacity: 1; visibility: visible; }
+.modal {
+  background: var(--bg-secondary); border-radius: var(--radius-lg);
+  width: 100%; max-width: 900px; max-height: 90vh; overflow-y: auto;
+  box-shadow: var(--shadow-lg); transform: translateY(20px);
+  transition: transform 200ms;
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 24px; border-bottom: 1px solid var(--border);
+}
+.modal-close {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: none; background: var(--bg-tertiary);
+  color: var(--text-primary); font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-body { padding: 24px; }
+
+/* ===== TOAST ===== */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--bg-secondary); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px 20px;
+  box-shadow: var(--shadow-lg); font-size: 0.85rem;
+  z-index: 2000; transform: translateY(100px); opacity: 0;
+  transition: all 300ms;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .kpi-row { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  .header { flex-direction: column; align-items: flex-start; }
+  .header-right { width: 100%; justify-content: flex-start; }
+  .filter-bar { flex-direction: column; align-items: stretch; }
+  .kpi-value { font-size: 1.3rem; }
+  .dashboard { padding: 0 12px 30px; }
+}
+@media (max-width: 480px) {
+  .kpi-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .kpi-card { padding: 12px; }
+  .kpi-value { font-size: 1.1rem; }
+  .tabs { flex-wrap: nowrap; overflow-x: auto; }
+}
+
+/* ===== PRINT ===== */
+@media print {
+  .header-right, .filter-bar, .tabs, .btn, .modal-overlay { display: none !important; }
+  .panel { break-inside: avoid; }
+  body { background: white; color: black; }
+}
+
+/* ===== LOADING ===== */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--border) 50%, var(--bg-tertiary) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* ===== THRESHOLD CONFIG PANEL ===== */
+.threshold-config { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.threshold-config input { width: 80px; }
+
+/* ===== SECTION VISIBILITY ===== */
+.section { display: none; }
+.section.active { display: block; }
+
+/* ===== CORRELATION MATRIX ===== */
+.corr-matrix {
+  display: grid; gap: 1px; background: var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.corr-cell {
+  display: flex; align-items: center; justify-content: center;
+  padding: 6px; font-size: 0.7rem; font-weight: 600;
+  min-width: 50px; min-height: 40px;
+}
+.corr-label {
+  font-size: 0.65rem; font-weight: 600;
+  color: var(--text-secondary); padding: 6px;
+  display: flex; align-items: center;
+  background: var(--bg-secondary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ===== SKIP LINK ===== */
+.skip-link {
+  position: absolute; top: -40px; left: 0;
+  background: var(--accent); color: white;
+  padding: 8px 16px; z-index: 9999;
+  transition: top 200ms;
+}
+.skip-link:focus { top: 0; }
+</style>
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<div class="dashboard" id="main-content" role="main">
+
+<!-- HEADER -->
+<header class="header" role="banner">
+  <div class="header-left">
+    <div class="header-logo" aria-hidden="true">NG</div>
+    <div>
+      <div class="header-title">Nigeria Economic Dashboard</div>
+      <div class="header-subtitle">Real-time macroeconomic indicators &amp; market data</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="btn btn-sm" id="btn-refresh" title="Refresh data" aria-label="Refresh data">↻ Refresh</button>
+    <button class="btn btn-sm" id="btn-download-all" title="Download all data as CSV">⬇ CSV</button>
+    <button class="btn btn-sm" id="btn-download-xlsx" title="Download all data as Excel">⬇ Excel</button>
+    <button class="btn btn-icon btn-sm" id="btn-theme" title="Toggle theme" aria-label="Toggle theme">◑</button>
+    <button class="btn btn-icon btn-sm" id="btn-high-contrast" title="High contrast mode" aria-label="High contrast mode">HC</button>
+  </div>
+</header>
+
+<!-- TABS -->
+<nav class="tabs" role="tablist" aria-label="Dashboard sections">
+  <button class="tab active" role="tab" data-section="overview" aria-selected="true">Overview</button>
+  <button class="tab" role="tab" data-section="timeseries" aria-selected="false">Time Series</button>
+  <button class="tab" role="tab" data-section="comparison" aria-selected="false">Compare</button>
+  <button class="tab" role="tab" data-section="correlation" aria-selected="false">Correlation</button>
+  <button class="tab" role="tab" data-section="datatable" aria-selected="false">Data Table</button>
+  <button class="tab" role="tab" data-section="events" aria-selected="false">Events</button>
+</nav>
+
+<!-- FILTER BAR -->
+<div class="filter-bar" role="search" aria-label="Data filters">
+  <div class="filter-group">
+    <span class="filter-label">Range</span>
+    <select id="filter-range" aria-label="Date range">
+      <option value="1y">Last 1 Year</option>
+      <option value="2y">Last 2 Years</option>
+      <option value="5y" selected>Last 5 Years</option>
+      <option value="10y">Last 10 Years</option>
+      <option value="max">All Data</option>
+      <option value="custom">Custom</option>
+    </select>
+    <input type="date" id="filter-from" style="display:none" aria-label="Start date">
+    <input type="date" id="filter-to" style="display:none" aria-label="End date">
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Category</span>
+    <select id="filter-category" aria-label="Indicator category">
+      <option value="all">All Categories</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Indicator</span>
+    <select id="filter-indicator" aria-label="Primary indicator">
+    </select>
+  </div>
+</div>
+
+<!-- SECTION: OVERVIEW -->
+<section class="section active" id="sec-overview" aria-labelledby="tab-overview">
+  <div class="kpi-row" id="kpi-row" role="list" aria-label="Key performance indicators"></div>
+  <div class="narrative" id="narrative-summary" role="region" aria-label="Summary narrative"></div>
+  <div class="panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title" id="main-chart-title">Headline Inflation (CPI)</div>
+        <div class="panel-subtitle" id="main-chart-subtitle">Monthly, % Year-on-Year — Source: NBS</div>
+      </div>
+      <div class="panel-actions">
+        <button class="btn btn-sm" id="btn-ma" title="Toggle moving average">MA</button>
+        <button class="btn btn-sm" id="btn-events-toggle" title="Toggle event annotations">Events</button>
+        <button class="btn btn-sm" id="btn-chart-png" title="Export chart as PNG">PNG</button>
+        <button class="btn btn-sm" id="btn-chart-csv" title="Export chart data as CSV">CSV</button>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="chart-container"><canvas id="main-chart" role="img" aria-label="Time series chart"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: TIME SERIES -->
+<section class="section" id="sec-timeseries" aria-labelledby="tab-timeseries">
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">GDP Growth Rate</div></div>
+      <div class="panel-body"><div class="chart-container"><canvas id="chart-gdp"></canvas></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Inflation (Headline, Core, Food)</div></div>
+      <div class="panel-body"><div class="chart-container"><canvas id="chart-inflation"></canvas></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Exchange Rates (Official & Parallel)</div></div>
+      <div class="panel-body"><div class="chart-container"><canvas id="chart-fx"></canvas></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Interest Rates (MPR & T-Bills)</div></div>
+      <div class="panel-body"><div class="chart-container"><canvas id="chart-rates"></canvas></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Trade Balance</div></div>
+      <div class="panel-body"><div class="chart-container"><canvas id="chart-trade"></canvas></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Foreign Reserves & External Debt</div></div>
+      <div class="panel-body"><div class="chart-container"><canvas id="chart-external"></canvas></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Crude Oil Production & Price</div></div>
+      <div class="panel-body"><div class="chart-container"><canvas id="chart-oil"></canvas></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">NGX All-Share Index</div></div>
+      <div class="panel-body"><div class="chart-container"><canvas id="chart-ngx"></canvas></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: COMPARISON -->
+<section class="section" id="sec-comparison" aria-labelledby="tab-comparison">
+  <div class="filter-bar" style="margin-bottom:16px">
+    <div class="filter-group">
+      <span class="filter-label">Indicator 1</span>
+      <select id="compare-a" aria-label="First comparison indicator"></select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Indicator 2</span>
+      <select id="compare-b" aria-label="Second comparison indicator"></select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Normalize</span>
+      <button class="btn btn-sm" id="btn-normalize">Index to 100</button>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><div class="panel-title" id="compare-title">Comparison</div></div>
+    <div class="panel-body"><div class="chart-container"><canvas id="chart-compare"></canvas></div></div>
+  </div>
+</section>
+
+<!-- SECTION: CORRELATION -->
+<section class="section" id="sec-correlation" aria-labelledby="tab-correlation">
+  <div class="filter-bar" style="margin-bottom:16px">
+    <div class="filter-group">
+      <span class="filter-label">X Axis</span>
+      <select id="corr-x" aria-label="Correlation X axis"></select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Y Axis</span>
+      <select id="corr-y" aria-label="Correlation Y axis"></select>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title" id="corr-title">Scatter Plot</div>
+      <div class="panel-subtitle" id="corr-stats"></div>
+    </div>
+    <div class="panel-body"><div class="chart-container"><canvas id="chart-corr"></canvas></div></div>
+  </div>
+</section>
+
+<!-- SECTION: DATA TABLE -->
+<section class="section" id="sec-datatable" aria-labelledby="tab-datatable">
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Raw Data</div>
+      <div class="panel-actions">
+        <button class="btn btn-sm" id="btn-table-csv">⬇ CSV</button>
+        <button class="btn btn-sm" id="btn-table-xlsx">⬇ Excel</button>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="data-table-wrap">
+        <table class="data-table" id="data-table" role="grid" aria-label="Economic data table">
+          <thead><tr id="table-head"></tr></thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: EVENTS -->
+<section class="section" id="sec-events" aria-labelledby="tab-events">
+  <div class="panel">
+    <div class="panel-header"><div class="panel-title">Major Economic Events & Policy Changes</div></div>
+    <div class="panel-body" id="events-list" role="list"></div>
+  </div>
+</section>
+
+</div><!-- /dashboard -->
+
+<!-- DRILLDOWN MODAL -->
+<div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-label="Indicator detail">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="panel-title" id="modal-title">Detail</div>
+      <button class="modal-close" id="modal-close" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- ===== APPLICATION JAVASCRIPT ===== -->
+<script>
+// ============================================================
+// DATA GENERATION — realistic Nigeria economic data
+// ============================================================
+const DATA = (() => {
+  const now = new Date('2026-03-25');
+
+  function dateStr(d) { return d.toISOString().split('T')[0]; }
+  function addMonths(d, n) { const r = new Date(d); r.setMonth(r.getMonth() + n); return r; }
+  function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+  function jitter(base, pct) { return base * (1 + (Math.random() - 0.5) * 2 * pct); }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function trend(start, end, steps, noise) {
+    const arr = [];
+    for (let i = 0; i < steps; i++) {
+      const t = i / (steps - 1);
+      arr.push(jitter(start + (end - start) * t, noise));
+    }
+    return arr;
+  }
+  function randomWalk(start, steps, drift, vol) {
+    const arr = [start];
+    for (let i = 1; i < steps; i++) {
+      arr.push(clamp(arr[i-1] + drift + (Math.random()-0.5)*2*vol, start*0.2, start*5));
+    }
+    return arr;
+  }
+
+  // Monthly dates from Jan 2015 to Mar 2026
+  const monthlyDates = [];
+  let d = new Date(2015, 0, 1);
+  while (d <= now) { monthlyDates.push(dateStr(d)); d = addMonths(d, 1); }
+  const nMonths = monthlyDates.length; // ~135
+
+  // Quarterly dates
+  const quarterlyDates = monthlyDates.filter((_, i) => i % 3 === 2);
+  const nQuarters = quarterlyDates.length;
+
+  // Annual dates
+  const annualDates = [];
+  for (let y = 2015; y <= 2025; y++) annualDates.push(`${y}-12-31`);
+
+  // Daily dates (last 5 years for FX, oil, NGX)
+  const dailyDates = [];
+  d = new Date(2021, 0, 4);
+  while (d <= now) {
+    if (d.getDay() !== 0 && d.getDay() !== 6) dailyDates.push(dateStr(d));
+    d = addDays(d, 1);
+  }
+  const nDaily = dailyDates.length;
+
+  // --- GDP ---
+  const gdpNominal = trend(17.9, 75, nQuarters, 0.03);  // NGN Trillion
+  const gdpRealGrowth = [
+    // 2015-2026 quarterly growth rates (realistic pattern)
+    2.4,2.1,2.8,2.1, -0.4,-1.5,-2.2,-1.7, 0.7,0.5,1.2,1.9,
+    1.9,1.5,1.8,2.4, 2.1,2.3,2.1,2.5, -6.1,3.4,0.1,0.5,
+    5.0,4.0,4.0,3.4, 3.1,3.5,2.3,3.5, 2.3,2.5,3.5,2.7,
+    2.5,3.2,3.1,2.8, 3.5,3.8,3.2,3.4
+  ].slice(0, nQuarters);
+  const gdpPerCapita = trend(2730, 1620, annualDates.length, 0.02); // USD (declining due to FX)
+
+  // --- Inflation ---
+  // Realistic Nigeria CPI path: low in 2015, rose 2016-17, fell, then surged 2022+
+  const cpiBase = [
+    9.6,9.4,9.0,8.5,8.7,9.0,9.6,9.4,9.3,9.0,8.7,9.6, // 2015
+    9.6,11.4,12.8,13.7,15.6,16.5,17.1,17.6,17.9,18.3,18.5,18.6, // 2016
+    17.8,17.8,17.3,17.2,16.3,16.1,16.1,16.0,15.9,15.9,15.4,15.4, // 2017
+    15.1,14.3,13.3,12.5,11.6,11.2,11.1,11.2,11.3,11.3,11.3,11.4, // 2018
+    11.4,11.3,11.3,11.4,11.4,11.2,11.1,11.0,11.2,11.6,11.9,12.0, // 2019
+    12.1,12.2,12.3,12.3,12.4,12.6,12.8,13.2,13.7,14.2,14.9,15.8, // 2020
+    16.5,17.3,18.2,18.1,17.9,17.8,17.4,17.0,16.6,15.9,15.4,15.6, // 2021
+    15.6,15.7,15.9,16.8,17.7,18.6,19.6,20.5,20.8,21.1,21.5,21.3, // 2022
+    21.8,22.0,22.3,22.2,22.4,22.8,24.1,25.8,26.7,27.3,28.2,28.9, // 2023
+    29.9,31.7,33.2,33.7,33.9,34.2,33.4,32.2,32.7,33.9,34.6,34.8, // 2024 (post-subsidy spike)
+    33.8,32.1,31.5,30.8,30.2,29.5,29.1,28.4,28.0,27.5,27.0,26.5, // 2025
+    26.0,25.5,25.0 // 2026 Q1
+  ].slice(0, nMonths);
+
+  const cpiCore = cpiBase.map((v,i) => clamp(v * jitter(0.78, 0.03), 5, 30));
+  const cpiFood = cpiBase.map((v,i) => clamp(v * jitter(1.2, 0.05), 5, 45));
+
+  // --- Unemployment ---
+  const unemployment = [
+    7.5,8.0,9.1,10.4,13.4,14.2,16.2,18.8,23.1,27.1,33.3,33.0,
+    30.0,28.5,27.0,25.5,24.0,23.0,22.5,22.0,21.5,21.0,20.5,20.0,
+    19.5,19.2,18.8,18.5,18.2,17.8,17.5,17.2,16.9,16.5,16.2,15.8,
+    15.5,15.2,14.8,14.5,14.2,14.0,13.8,13.5
+  ].slice(0, nQuarters);
+
+  // --- Exchange Rates ---
+  // Official rate path: ~199 in 2021, ~460 mid-2023, ~1500+ in 2024, ~1600 in 2025
+  const fxOfficial = (() => {
+    const arr = [];
+    const phases = [
+      { start: 0, end: Math.floor(nDaily * 0.35), from: 411, to: 460 },  // 2021-mid 2022
+      { start: Math.floor(nDaily * 0.35), end: Math.floor(nDaily * 0.47), from: 460, to: 465 },
+      { start: Math.floor(nDaily * 0.47), end: Math.floor(nDaily * 0.50), from: 465, to: 770 },  // Jun 2023 unification
+      { start: Math.floor(nDaily * 0.50), end: Math.floor(nDaily * 0.58), from: 770, to: 920 },
+      { start: Math.floor(nDaily * 0.58), end: Math.floor(nDaily * 0.65), from: 920, to: 1550 },  // Jan 2024 crash
+      { start: Math.floor(nDaily * 0.65), end: Math.floor(nDaily * 0.80), from: 1500, to: 1600 },
+      { start: Math.floor(nDaily * 0.80), end: nDaily, from: 1580, to: 1520 }
+    ];
+    for (const p of phases) {
+      for (let i = p.start; i < p.end; i++) {
+        const t = (i - p.start) / (p.end - p.start);
+        arr[i] = jitter(p.from + (p.to - p.from) * t, 0.008);
+      }
+    }
+    return arr;
+  })();
+
+  const fxParallel = fxOfficial.map((v, i) => v * jitter(1.08, 0.03)); // ~8% premium
+  const fxEUR = fxOfficial.map(v => v * jitter(1.09, 0.01));
+  const fxGBP = fxOfficial.map(v => v * jitter(1.27, 0.01));
+
+  // --- Interest Rates ---
+  const mprValues = [
+    11.0,11.0,11.0,11.0,12.0,14.0,14.0,14.0,14.0,14.0,14.0,14.0,
+    14.0,14.0,14.0,14.0,14.0,14.0,14.0,14.0,14.0,14.0,14.0,14.0,
+    14.0,13.5,13.5,13.5,13.5,13.5,13.5,13.5,13.5,13.5,13.5,13.5,
+    13.5,13.5,13.5,13.5,13.5,12.5,12.5,12.5,12.5,12.5,12.5,11.5,
+    11.5,11.5,11.5,11.5,11.5,11.5,11.5,11.5,11.5,11.5,11.5,11.5,
+    11.5,11.5,11.5,11.5,11.5,11.5,11.5,11.5,11.5,11.5,11.5,11.5,
+    11.5,11.5,13.0,13.0,13.0,16.5,16.5,16.5,16.5,17.5,18.5,18.5,
+    18.5,18.5,18.5,18.5,18.5,18.5,18.75,18.75,18.75,18.75,18.75,18.75,
+    18.75,22.75,24.75,24.75,26.25,26.25,26.75,26.75,26.75,26.75,27.25,27.50,
+    27.50,27.50,27.50,27.50,27.50,27.50,27.50,27.50,27.50,27.50,27.25,27.00,
+    27.00,27.00,27.00,27.00,26.75,26.75,26.75,26.50,26.50,26.50,26.50,26.50,
+    26.50,26.25,26.00
+  ].slice(0, nMonths);
+
+  const tbill91 = mprValues.map((v,i) => clamp(v * jitter(0.72, 0.05), 2, 25));
+  const tbill364 = mprValues.map((v,i) => clamp(v * jitter(0.85, 0.04), 3, 28));
+
+  // --- Trade ---
+  const exports = trend(2800, 8500, nQuarters, 0.12);
+  const imports = trend(2200, 7800, nQuarters, 0.10);
+  const tradeBalance = exports.map((e, i) => e - imports[i]);
+
+  // --- Fiscal ---
+  const govRevenue = trend(800, 3200, nQuarters, 0.15);
+  const govExpenditure = govRevenue.map(v => v * jitter(1.25, 0.08));
+
+  // --- External ---
+  const reserves = [
+    29.1,28.4,28.6,27.8,26.5,26.3,25.8,25.2,24.7,26.0,28.2,29.5,
+    30.3,30.8,31.5,33.0,34.2,35.8,37.5,39.0,40.5,41.2,42.5,43.8,
+    44.3,44.8,45.0,45.3,44.5,43.8,42.0,41.3,40.6,39.8,38.7,38.2,
+    38.0,37.5,38.5,39.2,39.8,40.5,41.0,41.5,42.0,41.5,40.8,39.5,
+    38.2,36.5,35.8,35.2,35.6,36.0,35.5,34.8,34.2,33.5,33.0,33.4,
+    33.8,34.5,34.0,33.2,32.8,33.5,34.2,35.0,35.8,36.3,36.8,37.2,
+    37.0,36.5,36.0,35.5,35.0,34.2,33.8,32.8,32.5,33.0,33.5,34.0,
+    34.5,33.8,33.2,34.0,33.5,32.8,33.0,33.5,34.0,34.5,35.0,35.5,
+    36.0,36.5,37.0,37.5,38.0,38.5,39.0,39.5,39.2,38.8,38.5,38.2,
+    38.0,37.8,37.5,37.2,37.0,36.8,36.5,36.2,36.0,35.8,35.5,35.2,
+    35.0,35.3,35.5,35.8,36.0,36.2,36.5,36.8,37.0,37.2,37.5,37.8,
+    38.0,38.2,38.5
+  ].slice(0, nMonths);
+
+  const extDebt = trend(10.7, 46, nQuarters, 0.03);
+  const currentAccount = trend(-3.1, 1.2, nQuarters, 0.3);
+
+  // --- Oil ---
+  const oilProduction = [
+    1.75,1.68,1.72,1.70,1.65,1.58,1.52,1.48,1.51,1.55,1.60,1.63,
+    1.55,1.50,1.45,1.42,1.38,1.35,1.30,1.28,1.32,1.38,1.42,1.50,
+    1.62,1.68,1.72,1.78,1.82,1.85,1.88,1.90,1.78,1.72,1.65,1.60,
+    1.58,1.52,1.48,1.42,1.38,1.35,1.32,1.30,1.28,1.25,1.22,1.18,
+    1.20,1.15,1.10,1.08,1.12,1.18,1.22,1.25,1.28,1.32,1.35,1.38,
+    1.22,1.18,1.15,1.20,1.25,1.28,1.32,1.35,1.38,1.42,1.45,1.48,
+    1.45,1.42,1.38,1.35,1.32,1.30,1.28,1.25,1.22,1.25,1.28,1.32,
+    1.35,1.38,1.42,1.45,1.48,1.50,1.52,1.48,1.45,1.42,1.38,1.40,
+    1.42,1.45,1.48,1.50,1.52,1.55,1.58,1.55,1.52,1.50,1.48,1.45,
+    1.48,1.50,1.52,1.55,1.58,1.60,1.62,1.58,1.55,1.52,1.50,1.48,
+    1.50,1.52,1.55,1.58,1.60,1.62,1.60,1.58,1.55,1.52,1.50,1.52,
+    1.55,1.58,1.60
+  ].slice(0, nMonths);
+
+  const oilPrice = randomWalk(55, nDaily, 0.02, 1.5).map((v,i) => {
+    // Shape: low in 2021, spike 2022, moderate 2023-25
+    const t = i / nDaily;
+    if (t < 0.15) return clamp(v * 0.9, 40, 70);
+    if (t < 0.30) return clamp(v * 1.6, 70, 130);
+    if (t < 0.50) return clamp(v * 1.2, 60, 95);
+    return clamp(v * 1.1, 55, 90);
+  });
+
+  // --- NGX ---
+  const ngxASI = randomWalk(40000, nDaily, 15, 250).map((v, i) => {
+    const t = i / nDaily;
+    if (t < 0.3) return clamp(v, 38000, 52000);
+    if (t < 0.6) return clamp(v * 1.5, 50000, 80000);
+    if (t < 0.8) return clamp(v * 2.2, 80000, 110000);
+    return clamp(v * 2.5, 95000, 115000);
+  });
+  const ngxMktCap = ngxASI.map(v => v / 1000 * jitter(0.55, 0.02)); // rough NGN Trillion
+
+  // --- PMI ---
+  const pmi = monthlyDates.map((_, i) => {
+    const base = i < 60 ? 48.5 : i < 96 ? 46 : i < 108 ? 51 : 52.5;
+    return clamp(jitter(base, 0.04), 40, 58);
+  });
+
+  // Build series map
+  const series = {
+    gdp_nominal: { dates: quarterlyDates, values: gdpNominal },
+    gdp_real_growth: { dates: quarterlyDates, values: gdpRealGrowth },
+    gdp_per_capita: { dates: annualDates, values: gdpPerCapita },
+    cpi_headline: { dates: monthlyDates, values: cpiBase },
+    cpi_core: { dates: monthlyDates, values: cpiCore },
+    cpi_food: { dates: monthlyDates, values: cpiFood },
+    unemployment_rate: { dates: quarterlyDates, values: unemployment },
+    fx_usd_ngn: { dates: dailyDates, values: fxOfficial },
+    fx_parallel: { dates: dailyDates, values: fxParallel },
+    fx_eur_ngn: { dates: dailyDates, values: fxEUR },
+    fx_gbp_ngn: { dates: dailyDates, values: fxGBP },
+    mpr: { dates: monthlyDates, values: mprValues },
+    tbill_91: { dates: monthlyDates, values: tbill91 },
+    tbill_364: { dates: monthlyDates, values: tbill364 },
+    exports: { dates: quarterlyDates, values: exports },
+    imports: { dates: quarterlyDates, values: imports },
+    trade_balance: { dates: quarterlyDates, values: tradeBalance },
+    govt_revenue: { dates: quarterlyDates, values: govRevenue },
+    govt_expenditure: { dates: quarterlyDates, values: govExpenditure },
+    foreign_reserves: { dates: monthlyDates, values: reserves },
+    external_debt: { dates: quarterlyDates, values: extDebt },
+    current_account: { dates: quarterlyDates, values: currentAccount },
+    oil_production: { dates: monthlyDates, values: oilProduction },
+    oil_price: { dates: dailyDates, values: oilPrice },
+    ngx_asi: { dates: dailyDates, values: ngxASI },
+    ngx_market_cap: { dates: dailyDates, values: ngxMktCap },
+    pmi: { dates: monthlyDates, values: pmi }
+  };
+
+  return { series, monthlyDates, quarterlyDates, annualDates, dailyDates };
+})();
+
+// ============================================================
+// INDICATOR METADATA
+// ============================================================
+const INDICATORS = [
+  { id:'gdp_nominal', name:'Nominal GDP', cat:'GDP', freq:'quarterly', units:'NGN Tn', fmt:'tn', source:'NBS', positive:'up' },
+  { id:'gdp_real_growth', name:'Real GDP Growth', cat:'GDP', freq:'quarterly', units:'%', fmt:'pct1', source:'NBS', positive:'up' },
+  { id:'gdp_per_capita', name:'GDP Per Capita', cat:'GDP', freq:'annual', units:'USD', fmt:'usd', source:'World Bank', positive:'up' },
+  { id:'cpi_headline', name:'Headline CPI', cat:'Inflation', freq:'monthly', units:'% YoY', fmt:'pct1', source:'NBS', positive:'down', kpi:true },
+  { id:'cpi_core', name:'Core Inflation', cat:'Inflation', freq:'monthly', units:'% YoY', fmt:'pct1', source:'NBS', positive:'down' },
+  { id:'cpi_food', name:'Food Inflation', cat:'Inflation', freq:'monthly', units:'% YoY', fmt:'pct1', source:'NBS', positive:'down' },
+  { id:'unemployment_rate', name:'Unemployment', cat:'Labour', freq:'quarterly', units:'%', fmt:'pct1', source:'NBS', positive:'down' },
+  { id:'fx_usd_ngn', name:'USD/NGN Rate', cat:'Exchange Rates', freq:'daily', units:'₦/USD', fmt:'fx', source:'CBN', positive:'down', kpi:true },
+  { id:'fx_parallel', name:'Parallel Rate', cat:'Exchange Rates', freq:'daily', units:'₦/USD', fmt:'fx', source:'Market', positive:'down' },
+  { id:'fx_eur_ngn', name:'EUR/NGN Rate', cat:'Exchange Rates', freq:'daily', units:'₦/EUR', fmt:'fx', source:'CBN', positive:'down' },
+  { id:'fx_gbp_ngn', name:'GBP/NGN Rate', cat:'Exchange Rates', freq:'daily', units:'₦/GBP', fmt:'fx', source:'CBN', positive:'down' },
+  { id:'mpr', name:'MPR', cat:'Interest Rates', freq:'monthly', units:'%', fmt:'pct2', source:'CBN', positive:'neutral', kpi:true },
+  { id:'tbill_91', name:'91-Day T-Bill', cat:'Interest Rates', freq:'monthly', units:'%', fmt:'pct2', source:'CBN', positive:'neutral' },
+  { id:'tbill_364', name:'364-Day T-Bill', cat:'Interest Rates', freq:'monthly', units:'%', fmt:'pct2', source:'CBN', positive:'neutral' },
+  { id:'exports', name:'Exports', cat:'Trade', freq:'quarterly', units:'NGN Bn', fmt:'bn', source:'NBS', positive:'up' },
+  { id:'imports', name:'Imports', cat:'Trade', freq:'quarterly', units:'NGN Bn', fmt:'bn', source:'NBS', positive:'neutral' },
+  { id:'trade_balance', name:'Trade Balance', cat:'Trade', freq:'quarterly', units:'NGN Bn', fmt:'bn', source:'NBS', positive:'up', kpi:true },
+  { id:'govt_revenue', name:'Govt Revenue', cat:'Fiscal', freq:'quarterly', units:'NGN Bn', fmt:'bn', source:'NBS', positive:'up' },
+  { id:'govt_expenditure', name:'Govt Expenditure', cat:'Fiscal', freq:'quarterly', units:'NGN Bn', fmt:'bn', source:'NBS', positive:'neutral' },
+  { id:'foreign_reserves', name:'Foreign Reserves', cat:'External', freq:'monthly', units:'USD Bn', fmt:'bn1', source:'CBN', positive:'up', kpi:true },
+  { id:'external_debt', name:'External Debt', cat:'External', freq:'quarterly', units:'USD Bn', fmt:'bn1', source:'DMO', positive:'down' },
+  { id:'current_account', name:'Current Account', cat:'External', freq:'quarterly', units:'USD Bn', fmt:'bn1', source:'CBN', positive:'up' },
+  { id:'oil_production', name:'Oil Production', cat:'Commodity', freq:'monthly', units:'M bpd', fmt:'oil', source:'NNPC', positive:'up', kpi:true },
+  { id:'oil_price', name:'Bonny Light Price', cat:'Commodity', freq:'daily', units:'USD/bbl', fmt:'usd', source:'OPEC', positive:'up', kpi:true },
+  { id:'ngx_asi', name:'NGX All-Share', cat:'Financial Markets', freq:'daily', units:'Points', fmt:'int', source:'NGX', positive:'up', kpi:true },
+  { id:'ngx_market_cap', name:'NGX Market Cap', cat:'Financial Markets', freq:'daily', units:'NGN Tn', fmt:'tn', source:'NGX', positive:'up' },
+  { id:'pmi', name:'PMI', cat:'Leading Indicators', freq:'monthly', units:'Index', fmt:'pct1', source:'Stanbic IBTC', positive:'up' }
+];
+
+const EVENTS = [
+  {date:'2023-05-29',title:'President Tinubu Inaugurated',desc:'New administration with reform agenda',tags:['political']},
+  {date:'2023-06-01',title:'Fuel Subsidy Removal',desc:'Petrol subsidy removed; prices rose from ₦185 to ₦500+',tags:['fiscal','inflation']},
+  {date:'2023-06-14',title:'FX Unification',desc:'CBN unifies multiple FX windows; Naira depreciates sharply',tags:['fx','monetary']},
+  {date:'2024-02-27',title:'MPR to 22.75%',desc:'CBN raises MPR by 400bps in aggressive tightening',tags:['monetary']},
+  {date:'2024-03-26',title:'MPR to 24.75%',desc:'Further 200bps hike as inflation accelerates',tags:['monetary']},
+  {date:'2024-05-21',title:'MPR to 26.25%',desc:'150bps tightening continues',tags:['monetary']},
+  {date:'2024-01-29',title:'Naira at ₦1,500/USD',desc:'Record low on official market amid FX scarcity',tags:['fx']},
+  {date:'2024-10-01',title:'Minimum Wage ₦70,000',desc:'New national minimum wage takes effect',tags:['labour','fiscal']},
+  {date:'2024-11-26',title:'MPR to 27.50%',desc:'MPC raises benchmark rate by 25bps',tags:['monetary']},
+  {date:'2025-02-18',title:'MPC Holds at 27.50%',desc:'Rate held steady at February meeting',tags:['monetary']}
+];
+
+// ============================================================
+// UTILITY FUNCTIONS
+// ============================================================
+const FMT = {
+  pct1: v => v.toFixed(1) + '%',
+  pct2: v => v.toFixed(2) + '%',
+  fx: v => '₦' + v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ','),
+  bn: v => '₦' + v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + 'B',
+  bn1: v => '$' + v.toFixed(1) + 'B',
+  tn: v => '₦' + v.toFixed(1) + 'T',
+  usd: v => '$' + v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ','),
+  int: v => v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ','),
+  oil: v => v.toFixed(2) + ' mbpd',
+  raw: v => v.toFixed(2)
+};
+
+function fmt(id, v) {
+  const ind = INDICATORS.find(i => i.id === id);
+  return (FMT[ind?.fmt] || FMT.raw)(v);
+}
+
+function getFilteredSeries(id) {
+  const s = DATA.series[id];
+  if (!s) return { dates: [], values: [] };
+  const range = document.getElementById('filter-range').value;
+  const now = new Date('2026-03-25');
+  let from;
+  if (range === '1y') from = new Date(now.getFullYear()-1, now.getMonth(), now.getDate());
+  else if (range === '2y') from = new Date(now.getFullYear()-2, now.getMonth(), now.getDate());
+  else if (range === '5y') from = new Date(now.getFullYear()-5, now.getMonth(), now.getDate());
+  else if (range === '10y') from = new Date(now.getFullYear()-10, now.getMonth(), now.getDate());
+  else if (range === 'custom') {
+    from = new Date(document.getElementById('filter-from').value || '2015-01-01');
+    const to = new Date(document.getElementById('filter-to').value || '2026-03-25');
+    const dates = [], values = [];
+    for (let i = 0; i < s.dates.length; i++) {
+      const d = new Date(s.dates[i]);
+      if (d >= from && d <= to) { dates.push(s.dates[i]); values.push(s.values[i]); }
+    }
+    return { dates, values };
+  }
+  else from = new Date('2010-01-01');
+
+  const dates = [], values = [];
+  for (let i = 0; i < s.dates.length; i++) {
+    if (new Date(s.dates[i]) >= from) { dates.push(s.dates[i]); values.push(s.values[i]); }
+  }
+  return { dates, values };
+}
+
+function latest(id) {
+  const s = DATA.series[id];
+  return s ? s.values[s.values.length - 1] : 0;
+}
+
+function prevValue(id) {
+  const s = DATA.series[id];
+  if (!s || s.values.length < 2) return latest(id);
+  return s.values[s.values.length - 2];
+}
+
+function pctChange(curr, prev) {
+  if (prev === 0) return 0;
+  return ((curr - prev) / Math.abs(prev)) * 100;
+}
+
+function movingAvg(values, window) {
+  return values.map((_, i, arr) => {
+    const start = Math.max(0, i - window + 1);
+    const slice = arr.slice(start, i + 1);
+    return slice.reduce((a, b) => a + b, 0) / slice.length;
+  });
+}
+
+function linReg(xs, ys) {
+  const n = xs.length;
+  let sx=0,sy=0,sxx=0,sxy=0,syy=0;
+  for (let i=0;i<n;i++){sx+=xs[i];sy+=ys[i];sxx+=xs[i]*xs[i];sxy+=xs[i]*ys[i];syy+=ys[i]*ys[i];}
+  const denom=n*sxx-sx*sx;
+  const slope=(n*sxy-sx*sy)/denom;
+  const intercept=(sy-slope*sx)/n;
+  const yMean=sy/n;
+  let ssTot=0,ssRes=0;
+  for(let i=0;i<n;i++){ssTot+=(ys[i]-yMean)**2;ssRes+=(ys[i]-(slope*xs[i]+intercept))**2;}
+  const r2=1-ssRes/ssTot;
+  return{slope,intercept,r2};
+}
+
+function downsample(dates, values, maxPoints) {
+  if (dates.length <= maxPoints) return { dates, values };
+  const step = Math.ceil(dates.length / maxPoints);
+  const d = [], v = [];
+  for (let i = 0; i < dates.length; i += step) { d.push(dates[i]); v.push(values[i]); }
+  if (d[d.length-1] !== dates[dates.length-1]) { d.push(dates[dates.length-1]); v.push(values[values.length-1]); }
+  return { dates: d, values: v };
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ============================================================
+// CHART DEFAULTS
+// ============================================================
+const CHART_COLORS = ['#0d6f3d','#2563eb','#9333ea','#ea580c','#0891b2','#be185d','#854d0e','#4f46e5'];
+
+function chartDefaults() {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: true, position: 'top', labels: { usePointStyle: true, padding: 16, font: { size: 11 } } },
+      tooltip: {
+        backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 12 }, bodyFont: { size: 11, family: "'Cascadia Code', monospace" },
+        padding: 10, cornerRadius: 6, displayColors: true
+      },
+      zoom: {
+        pan: { enabled: true, mode: 'x' },
+        zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' }
+      }
+    },
+    scales: {
+      x: {
+        type: 'time', time: { tooltipFormat: 'dd MMM yyyy' },
+        grid: { display: false },
+        ticks: { font: { size: 10 }, maxRotation: 0, autoSkipPadding: 20 }
+      },
+      y: {
+        grid: { color: 'rgba(148,163,184,0.15)' },
+        ticks: { font: { size: 10 } }
+      }
+    }
+  };
+}
+
+function makeDataset(label, dates, values, color, opts={}) {
+  return {
+    label,
+    data: dates.map((d, i) => ({ x: d, y: values[i] })),
+    borderColor: color, backgroundColor: color + '20',
+    borderWidth: 2, pointRadius: 0, pointHoverRadius: 4,
+    fill: opts.fill || false, tension: 0.3,
+    ...(opts.dashed ? { borderDash: [5, 5] } : {}),
+    ...(opts.yAxisID ? { yAxisID: opts.yAxisID } : {})
+  };
+}
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  selectedIndicator: 'cpi_headline',
+  showMA: false,
+  showEvents: true,
+  thresholds: { cpi_headline: 25, fx_usd_ngn: 1600, foreign_reserves: 33 },
+  normalize: false,
+  compareA: 'cpi_headline',
+  compareB: 'fx_usd_ngn',
+  corrX: 'cpi_headline',
+  corrY: 'fx_usd_ngn',
+  tableSortCol: 0,
+  tableSortDir: 1,
+  charts: {}
+};
+
+// ============================================================
+// KPI ROW
+// ============================================================
+const KPI_IDS = ['cpi_headline','fx_usd_ngn','gdp_real_growth','mpr','foreign_reserves','oil_production','ngx_asi','oil_price','trade_balance'];
+
+function renderKPIRow() {
+  const row = document.getElementById('kpi-row');
+  row.innerHTML = '';
+  KPI_IDS.forEach(id => {
+    const ind = INDICATORS.find(i => i.id === id);
+    const val = latest(id);
+    const prev = prevValue(id);
+    const change = pctChange(val, prev);
+    const absChange = val - prev;
+    const isUp = change >= 0;
+    const isPositive = ind.positive === 'up' ? isUp : ind.positive === 'down' ? !isUp : true;
+    const threshold = state.thresholds[id];
+    let alertClass = '';
+    if (threshold !== undefined) {
+      if (ind.positive === 'down' && val > threshold) alertClass = 'alert-red';
+      else if (ind.positive === 'up' && val < threshold) alertClass = 'alert-red';
+    }
+
+    const card = document.createElement('div');
+    card.className = `kpi-card ${alertClass} ${state.selectedIndicator === id ? 'selected' : ''}`;
+    card.setAttribute('role', 'listitem');
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('aria-label', `${ind.name}: ${fmt(id, val)}, ${isUp ? 'up' : 'down'} ${Math.abs(change).toFixed(1)}%`);
+    card.onclick = () => { state.selectedIndicator = id; renderAll(); };
+    card.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); } };
+    card.ondblclick = () => openDrilldown(id);
+
+    card.innerHTML = `
+      <div class="kpi-header">
+        <span class="kpi-name">${ind.name}</span>
+        <span class="kpi-badge ${isUp ? 'up' : 'down'}">${isUp ? '▲' : '▼'} ${Math.abs(change).toFixed(1)}%</span>
+      </div>
+      <div class="kpi-value">${fmt(id, val)}</div>
+      <div class="kpi-change ${isPositive ? 'positive' : 'negative'}">
+        ${isUp ? '↑' : '↓'} ${fmt(id, Math.abs(absChange))} from prior period
+      </div>
+      <div class="kpi-sparkline"><canvas id="spark-${id}"></canvas></div>
+      <div class="kpi-updated">Updated: ${DATA.series[id].dates[DATA.series[id].dates.length-1]} · ${ind.source}</div>
+    `;
+    row.appendChild(card);
+
+    // Sparkline
+    requestAnimationFrame(() => {
+      const canvas = document.getElementById(`spark-${id}`);
+      if (!canvas) return;
+      const s = DATA.series[id];
+      const last30 = s.values.slice(-30);
+      const sparkColor = isPositive ? getComputedStyle(document.documentElement).getPropertyValue('--kpi-positive').trim() : getComputedStyle(document.documentElement).getPropertyValue('--kpi-negative').trim();
+      new Chart(canvas, {
+        type: 'line',
+        data: { labels: last30.map((_,i)=>i), datasets: [{ data: last30, borderColor: sparkColor, borderWidth: 1.5, pointRadius: 0, fill: { target: 'origin', above: sparkColor + '15' }, tension: 0.4 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } }, animation: false }
+      });
+    });
+  });
+}
+
+// ============================================================
+// NARRATIVE SUMMARY
+// ============================================================
+function renderNarrative() {
+  const id = state.selectedIndicator;
+  const ind = INDICATORS.find(i => i.id === id);
+  const s = DATA.series[id];
+  const val = latest(id);
+  const prev = prevValue(id);
+  const change = pctChange(val, prev);
+  const vals = s.values;
+  const max = Math.max(...vals);
+  const min = Math.min(...vals);
+  const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+  const recent12 = vals.slice(-12);
+  const trend12 = recent12[recent12.length-1] - recent12[0];
+  const trendDir = trend12 > 0 ? 'rising' : trend12 < 0 ? 'falling' : 'stable';
+
+  const el = document.getElementById('narrative-summary');
+  el.innerHTML = `<strong>${ind.name}</strong> currently stands at <strong>${fmt(id, val)}</strong>,
+    ${change >= 0 ? 'up' : 'down'} ${Math.abs(change).toFixed(1)}% from the previous period.
+    Over the available data period, the indicator has ranged from ${fmt(id, min)} to ${fmt(id, max)},
+    with an average of ${fmt(id, avg)}. The recent trend has been <strong>${trendDir}</strong> over the past 12 periods
+    (${change >= 0 ? '+' : ''}${fmt(id, trend12)} change).
+    Data source: ${ind.source}. Frequency: ${ind.freq}. Units: ${ind.units}.`;
+}
+
+// ============================================================
+// MAIN CHART
+// ============================================================
+function renderMainChart() {
+  const id = state.selectedIndicator;
+  const ind = INDICATORS.find(i => i.id === id);
+  const { dates, values } = getFilteredSeries(id);
+  const ds = downsample(dates, values, 500);
+
+  document.getElementById('main-chart-title').textContent = ind.name;
+  document.getElementById('main-chart-subtitle').textContent = `${ind.freq}, ${ind.units} — Source: ${ind.source}`;
+
+  if (state.charts.main) state.charts.main.destroy();
+
+  const datasets = [makeDataset(ind.name, ds.dates, ds.values, CHART_COLORS[0], { fill: true })];
+
+  if (state.showMA && ds.values.length > 6) {
+    const maVals = movingAvg(ds.values, Math.min(12, Math.floor(ds.values.length/4)));
+    datasets.push(makeDataset('Moving Avg', ds.dates, maVals, CHART_COLORS[1], { dashed: true }));
+  }
+
+  const opts = chartDefaults();
+
+  // Event annotations
+  if (state.showEvents) {
+    const annotations = {};
+    EVENTS.forEach((ev, idx) => {
+      const evDate = new Date(ev.date);
+      const dStart = new Date(ds.dates[0]);
+      const dEnd = new Date(ds.dates[ds.dates.length-1]);
+      if (evDate >= dStart && evDate <= dEnd) {
+        annotations['ev' + idx] = {
+          type: 'line', xMin: ev.date, xMax: ev.date,
+          borderColor: 'rgba(239,68,68,0.5)', borderWidth: 1, borderDash: [4,4],
+          label: { display: true, content: ev.title, position: 'start', font: { size: 9 }, backgroundColor: 'rgba(239,68,68,0.8)', padding: 3 }
+        };
+      }
+    });
+    opts.plugins.annotation = { annotations };
+  }
+
+  state.charts.main = new Chart(document.getElementById('main-chart'), {
+    type: 'line', data: { datasets }, options: opts
+  });
+}
+
+// ============================================================
+// TIME SERIES GRID CHARTS
+// ============================================================
+function renderTimeSeriesGrid() {
+  // GDP
+  const gdp = getFilteredSeries('gdp_real_growth');
+  if (state.charts.gdp) state.charts.gdp.destroy();
+  state.charts.gdp = new Chart(document.getElementById('chart-gdp'), {
+    type: 'bar',
+    data: { datasets: [{ label: 'Real GDP Growth %', data: gdp.dates.map((d,i)=>({x:d,y:gdp.values[i]})), backgroundColor: gdp.values.map(v => v >= 0 ? '#16a34a80' : '#dc262680'), borderColor: gdp.values.map(v => v >= 0 ? '#16a34a' : '#dc2626'), borderWidth: 1 }] },
+    options: { ...chartDefaults(), plugins: { ...chartDefaults().plugins, legend: { display: false } } }
+  });
+
+  // Inflation
+  const cpiH = getFilteredSeries('cpi_headline');
+  const cpiC = getFilteredSeries('cpi_core');
+  const cpiF = getFilteredSeries('cpi_food');
+  if (state.charts.inflation) state.charts.inflation.destroy();
+  state.charts.inflation = new Chart(document.getElementById('chart-inflation'), {
+    type: 'line',
+    data: { datasets: [
+      makeDataset('Headline', cpiH.dates, cpiH.values, CHART_COLORS[0]),
+      makeDataset('Core', cpiC.dates, cpiC.values, CHART_COLORS[1]),
+      makeDataset('Food', cpiF.dates, cpiF.values, CHART_COLORS[3])
+    ]},
+    options: chartDefaults()
+  });
+
+  // FX
+  const fxO = getFilteredSeries('fx_usd_ngn');
+  const fxP = getFilteredSeries('fx_parallel');
+  const fxDs = downsample(fxO.dates, fxO.values, 400);
+  const fxPDs = downsample(fxP.dates, fxP.values, 400);
+  if (state.charts.fx) state.charts.fx.destroy();
+  state.charts.fx = new Chart(document.getElementById('chart-fx'), {
+    type: 'line',
+    data: { datasets: [
+      makeDataset('Official', fxDs.dates, fxDs.values, CHART_COLORS[0], { fill: true }),
+      makeDataset('Parallel', fxPDs.dates, fxPDs.values, CHART_COLORS[3], { dashed: true })
+    ]},
+    options: chartDefaults()
+  });
+
+  // Rates
+  const mpr = getFilteredSeries('mpr');
+  const tb91 = getFilteredSeries('tbill_91');
+  const tb364 = getFilteredSeries('tbill_364');
+  if (state.charts.rates) state.charts.rates.destroy();
+  state.charts.rates = new Chart(document.getElementById('chart-rates'), {
+    type: 'line',
+    data: { datasets: [
+      makeDataset('MPR', mpr.dates, mpr.values, CHART_COLORS[0]),
+      makeDataset('91-Day T-Bill', tb91.dates, tb91.values, CHART_COLORS[1]),
+      makeDataset('364-Day T-Bill', tb364.dates, tb364.values, CHART_COLORS[2])
+    ]},
+    options: chartDefaults()
+  });
+
+  // Trade
+  const exp = getFilteredSeries('exports');
+  const imp = getFilteredSeries('imports');
+  const tb = getFilteredSeries('trade_balance');
+  if (state.charts.trade) state.charts.trade.destroy();
+  state.charts.trade = new Chart(document.getElementById('chart-trade'), {
+    type: 'bar',
+    data: { datasets: [
+      { label: 'Exports', data: exp.dates.map((d,i)=>({x:d,y:exp.values[i]})), backgroundColor: '#16a34a80', borderColor: '#16a34a', borderWidth: 1 },
+      { label: 'Imports', data: imp.dates.map((d,i)=>({x:d,y:imp.values[i]})), backgroundColor: '#dc262680', borderColor: '#dc2626', borderWidth: 1 },
+      makeDataset('Balance', tb.dates, tb.values, CHART_COLORS[2])
+    ]},
+    options: chartDefaults()
+  });
+
+  // External
+  const res = getFilteredSeries('foreign_reserves');
+  const debt = getFilteredSeries('external_debt');
+  if (state.charts.external) state.charts.external.destroy();
+  const extOpts = chartDefaults();
+  extOpts.scales.y1 = { position: 'right', grid: { display: false }, ticks: { font: { size: 10 } } };
+  state.charts.external = new Chart(document.getElementById('chart-external'), {
+    type: 'line',
+    data: { datasets: [
+      makeDataset('Reserves (USD Bn)', res.dates, res.values, CHART_COLORS[0], { fill: true }),
+      makeDataset('Ext. Debt (USD Bn)', debt.dates, debt.values, CHART_COLORS[3], { yAxisID: 'y1' })
+    ]},
+    options: extOpts
+  });
+
+  // Oil
+  const prod = getFilteredSeries('oil_production');
+  const price = getFilteredSeries('oil_price');
+  const priceDs = downsample(price.dates, price.values, 300);
+  if (state.charts.oil) state.charts.oil.destroy();
+  const oilOpts = chartDefaults();
+  oilOpts.scales.y1 = { position: 'right', grid: { display: false }, ticks: { font: { size: 10 } } };
+  state.charts.oil = new Chart(document.getElementById('chart-oil'), {
+    type: 'line',
+    data: { datasets: [
+      makeDataset('Production (mbpd)', prod.dates, prod.values, CHART_COLORS[0], { fill: true }),
+      makeDataset('Bonny Light ($/bbl)', priceDs.dates, priceDs.values, CHART_COLORS[3], { yAxisID: 'y1' })
+    ]},
+    options: oilOpts
+  });
+
+  // NGX
+  const ngx = getFilteredSeries('ngx_asi');
+  const ngxDs = downsample(ngx.dates, ngx.values, 400);
+  if (state.charts.ngx) state.charts.ngx.destroy();
+  state.charts.ngx = new Chart(document.getElementById('chart-ngx'), {
+    type: 'line',
+    data: { datasets: [makeDataset('All-Share Index', ngxDs.dates, ngxDs.values, CHART_COLORS[0], { fill: true })] },
+    options: { ...chartDefaults(), plugins: { ...chartDefaults().plugins, legend: { display: false } } }
+  });
+}
+
+// ============================================================
+// COMPARISON CHART
+// ============================================================
+function renderComparison() {
+  const aId = state.compareA;
+  const bId = state.compareB;
+  const indA = INDICATORS.find(i => i.id === aId);
+  const indB = INDICATORS.find(i => i.id === bId);
+  let sA = getFilteredSeries(aId);
+  let sB = getFilteredSeries(bId);
+
+  document.getElementById('compare-title').textContent = `${indA.name} vs ${indB.name}`;
+
+  // Align to common dates (nearest)
+  // For simplicity, downsample both to ~200 points
+  sA = downsample(sA.dates, sA.values, 200);
+  sB = downsample(sB.dates, sB.values, 200);
+
+  let vA = sA.values, vB = sB.values;
+  if (state.normalize) {
+    const baseA = vA[0] || 1, baseB = vB[0] || 1;
+    vA = vA.map(v => (v / baseA) * 100);
+    vB = vB.map(v => (v / baseB) * 100);
+  }
+
+  if (state.charts.compare) state.charts.compare.destroy();
+  const opts = chartDefaults();
+  if (!state.normalize) {
+    opts.scales.y1 = { position: 'right', grid: { display: false }, ticks: { font: { size: 10 } } };
+  }
+
+  state.charts.compare = new Chart(document.getElementById('chart-compare'), {
+    type: 'line',
+    data: { datasets: [
+      makeDataset(indA.name + (state.normalize ? ' (indexed)' : ''), sA.dates, vA, CHART_COLORS[0]),
+      makeDataset(indB.name + (state.normalize ? ' (indexed)' : ''), sB.dates, vB, CHART_COLORS[1], state.normalize ? {} : { yAxisID: 'y1' })
+    ]},
+    options: opts
+  });
+}
+
+// ============================================================
+// CORRELATION / SCATTER
+// ============================================================
+function renderCorrelation() {
+  const xId = state.corrX, yId = state.corrY;
+  const indX = INDICATORS.find(i => i.id === xId);
+  const indY = INDICATORS.find(i => i.id === yId);
+  let sX = getFilteredSeries(xId), sY = getFilteredSeries(yId);
+
+  // Align by nearest date (monthly granularity)
+  const dateMap = {};
+  sX.dates.forEach((d, i) => { const key = d.substring(0, 7); if (!dateMap[key]) dateMap[key] = {}; dateMap[key].x = sX.values[i]; });
+  sY.dates.forEach((d, i) => { const key = d.substring(0, 7); if (!dateMap[key]) dateMap[key] = {}; dateMap[key].y = sY.values[i]; });
+  const pairs = Object.values(dateMap).filter(p => p.x !== undefined && p.y !== undefined);
+
+  const xs = pairs.map(p => p.x), ys = pairs.map(p => p.y);
+  const reg = xs.length > 2 ? linReg(xs, ys) : { slope: 0, intercept: 0, r2: 0 };
+
+  document.getElementById('corr-title').textContent = `${indX.name} vs ${indY.name}`;
+  document.getElementById('corr-stats').textContent = `R² = ${reg.r2.toFixed(3)} | Slope = ${reg.slope.toFixed(4)} | n = ${pairs.length}`;
+
+  // Regression line
+  const xMin = Math.min(...xs), xMax = Math.max(...xs);
+  const regLine = [
+    { x: xMin, y: reg.slope * xMin + reg.intercept },
+    { x: xMax, y: reg.slope * xMax + reg.intercept }
+  ];
+
+  if (state.charts.corr) state.charts.corr.destroy();
+  state.charts.corr = new Chart(document.getElementById('chart-corr'), {
+    type: 'scatter',
+    data: {
+      datasets: [
+        { label: 'Data', data: pairs.map(p => ({ x: p.x, y: p.y })), backgroundColor: CHART_COLORS[0] + '80', borderColor: CHART_COLORS[0], pointRadius: 4, pointHoverRadius: 6 },
+        { label: 'Regression', data: regLine, type: 'line', borderColor: CHART_COLORS[3], borderWidth: 2, borderDash: [6,3], pointRadius: 0, fill: false }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: true, position: 'top' }, tooltip: { callbacks: { label: ctx => `${indX.name}: ${ctx.parsed.x.toFixed(2)}, ${indY.name}: ${ctx.parsed.y.toFixed(2)}` } } },
+      scales: {
+        x: { title: { display: true, text: `${indX.name} (${indX.units})` }, grid: { color: 'rgba(148,163,184,0.15)' } },
+        y: { title: { display: true, text: `${indY.name} (${indY.units})` }, grid: { color: 'rgba(148,163,184,0.15)' } }
+      }
+    }
+  });
+}
+
+// ============================================================
+// DATA TABLE
+// ============================================================
+function renderDataTable() {
+  const id = state.selectedIndicator;
+  const ind = INDICATORS.find(i => i.id === id);
+  const { dates, values } = getFilteredSeries(id);
+
+  const thead = document.getElementById('table-head');
+  thead.innerHTML = `
+    <th class="sorted" onclick="sortTable(0)">Date <span class="sort-arrow">${state.tableSortDir===1?'▼':'▲'}</span></th>
+    <th onclick="sortTable(1)">Value <span class="sort-arrow">▼</span></th>
+    <th onclick="sortTable(2)">Change <span class="sort-arrow">▼</span></th>
+    <th onclick="sortTable(3)">% Change <span class="sort-arrow">▼</span></th>
+  `;
+
+  let rows = dates.map((d, i) => {
+    const val = values[i];
+    const prev = i > 0 ? values[i-1] : val;
+    const chg = val - prev;
+    const pctChg = pctChange(val, prev);
+    return { date: d, value: val, change: chg, pctChange: pctChg };
+  });
+
+  rows.sort((a, b) => {
+    const col = state.tableSortCol;
+    const keys = ['date', 'value', 'change', 'pctChange'];
+    const key = keys[col];
+    const av = key === 'date' ? a[key] : +a[key];
+    const bv = key === 'date' ? b[key] : +b[key];
+    return (av > bv ? 1 : av < bv ? -1 : 0) * state.tableSortDir;
+  });
+
+  // Paginate: show last 200 rows max
+  rows = rows.slice(-200);
+
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.date}</td>
+      <td class="num">${fmt(id, r.value)}</td>
+      <td class="num" style="color:${r.change>=0?'var(--kpi-positive)':'var(--kpi-negative)'}">${r.change>=0?'+':''}${r.change.toFixed(2)}</td>
+      <td class="num" style="color:${r.pctChange>=0?'var(--kpi-positive)':'var(--kpi-negative)'}">${r.pctChange>=0?'+':''}${r.pctChange.toFixed(2)}%</td>
+    </tr>
+  `).join('');
+}
+
+window.sortTable = function(col) {
+  if (state.tableSortCol === col) state.tableSortDir *= -1;
+  else { state.tableSortCol = col; state.tableSortDir = -1; }
+  renderDataTable();
+};
+
+// ============================================================
+// EVENTS LIST
+// ============================================================
+function renderEvents() {
+  const el = document.getElementById('events-list');
+  el.innerHTML = EVENTS.sort((a,b) => b.date.localeCompare(a.date)).map(ev => `
+    <div style="padding:12px 0;border-bottom:1px solid var(--border);display:flex;gap:16px;align-items:flex-start;" role="listitem">
+      <div style="min-width:90px;font-size:0.8rem;font-weight:600;color:var(--accent);font-family:var(--mono);">${ev.date}</div>
+      <div>
+        <div style="font-weight:600;font-size:0.9rem;">${ev.title}</div>
+        <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:2px;">${ev.desc}</div>
+        <div style="margin-top:4px;display:flex;gap:4px;">${ev.tags.map(t => `<span style="font-size:0.65rem;padding:1px 6px;background:var(--bg-tertiary);border-radius:3px;color:var(--text-muted);">${t}</span>`).join('')}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// DRILLDOWN MODAL
+// ============================================================
+function openDrilldown(id) {
+  const ind = INDICATORS.find(i => i.id === id);
+  const s = DATA.series[id];
+  const val = latest(id);
+  const vals = s.values;
+  const max = Math.max(...vals);
+  const min = Math.min(...vals);
+  const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+  const maxDate = s.dates[vals.indexOf(max)];
+  const minDate = s.dates[vals.indexOf(min)];
+
+  document.getElementById('modal-title').textContent = ind.name + ' — Detail View';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="narrative">
+      <strong>${ind.name}</strong> (${ind.units}) — sourced from ${ind.source}, updated ${ind.freq}.<br>
+      Current: <strong>${fmt(id, val)}</strong> | High: ${fmt(id, max)} (${maxDate}) | Low: ${fmt(id, min)} (${minDate}) | Avg: ${fmt(id, avg)}
+    </div>
+    <div style="margin:16px 0">
+      <strong>Threshold Alert:</strong>
+      <div class="threshold-config" style="margin-top:8px">
+        <span style="font-size:0.8rem;">Alert when value ${ind.positive==='up'?'falls below':'exceeds'}</span>
+        <input type="number" id="threshold-input" value="${state.thresholds[id] || ''}" step="any" style="width:100px;" aria-label="Threshold value">
+        <button class="btn btn-sm btn-primary" onclick="setThreshold('${id}')">Set</button>
+        <button class="btn btn-sm" onclick="clearThreshold('${id}')">Clear</button>
+      </div>
+    </div>
+    <div style="height:300px;margin-top:16px;"><canvas id="drilldown-chart"></canvas></div>
+    <div style="margin-top:16px;">
+      <button class="btn btn-sm" onclick="downloadCSV('${id}')">⬇ Download CSV</button>
+      <button class="btn btn-sm" onclick="downloadXLSX('${id}')">⬇ Download Excel</button>
+    </div>
+    <div class="data-table-wrap" style="margin-top:16px;max-height:250px;">
+      <table class="data-table">
+        <thead><tr><th>Date</th><th>Value</th></tr></thead>
+        <tbody>${s.dates.slice(-50).reverse().map((d,i) => `<tr><td>${d}</td><td class="num">${fmt(id, s.values[s.values.length-1-i])}</td></tr>`).join('')}</tbody>
+      </table>
+    </div>
+  `;
+
+  // Drilldown chart
+  const filtered = getFilteredSeries(id);
+  const ds = downsample(filtered.dates, filtered.values, 300);
+  new Chart(document.getElementById('drilldown-chart'), {
+    type: 'line',
+    data: { datasets: [makeDataset(ind.name, ds.dates, ds.values, CHART_COLORS[0], { fill: true })] },
+    options: { ...chartDefaults(), plugins: { ...chartDefaults().plugins, legend: { display: false } } }
+  });
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+window.setThreshold = function(id) {
+  const v = parseFloat(document.getElementById('threshold-input').value);
+  if (!isNaN(v)) { state.thresholds[id] = v; toast(`Threshold set for ${id}: ${v}`); renderKPIRow(); }
+};
+window.clearThreshold = function(id) {
+  delete state.thresholds[id];
+  toast('Threshold cleared');
+  renderKPIRow();
+};
+
+// ============================================================
+// EXPORT FUNCTIONS
+// ============================================================
+function downloadCSV(id) {
+  const ind = INDICATORS.find(i => i.id === id);
+  const s = DATA.series[id];
+  const rows = s.dates.map((d, i) => ({ Date: d, [ind.name]: s.values[i], Units: ind.units, Source: ind.source }));
+  const csv = Papa.unparse(rows);
+  downloadBlob(csv, `nigeria_${id}_data.csv`, 'text/csv');
+  toast('CSV downloaded');
+}
+
+function downloadXLSX(id) {
+  const ind = INDICATORS.find(i => i.id === id);
+  const s = DATA.series[id];
+  const rows = s.dates.map((d, i) => [d, s.values[i]]);
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([['Date', ind.name + ' (' + ind.units + ')'], ...rows]);
+  XLSX.utils.book_append_sheet(wb, ws, ind.name.substring(0, 30));
+  XLSX.writeFile(wb, `nigeria_${id}_data.xlsx`);
+  toast('Excel downloaded');
+}
+
+function downloadAllCSV() {
+  const rows = [];
+  INDICATORS.forEach(ind => {
+    const s = DATA.series[ind.id];
+    s.dates.forEach((d, i) => {
+      rows.push({ Indicator: ind.name, Category: ind.cat, Date: d, Value: s.values[i], Units: ind.units, Source: ind.source });
+    });
+  });
+  const csv = Papa.unparse(rows);
+  downloadBlob(csv, 'nigeria_economic_data_all.csv', 'text/csv');
+  toast('All data CSV downloaded');
+}
+
+function downloadAllXLSX() {
+  const wb = XLSX.utils.book_new();
+  INDICATORS.forEach(ind => {
+    const s = DATA.series[ind.id];
+    const rows = s.dates.map((d, i) => [d, s.values[i]]);
+    const ws = XLSX.utils.aoa_to_sheet([['Date', ind.name + ' (' + ind.units + ')'], ...rows]);
+    const sheetName = ind.name.substring(0, 30).replace(/[\/\\?*\[\]]/g, '');
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  });
+  XLSX.writeFile(wb, 'nigeria_economic_data_all.xlsx');
+  toast('All data Excel downloaded');
+}
+
+function downloadBlob(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportChartPNG() {
+  const canvas = document.getElementById('main-chart');
+  const link = document.createElement('a');
+  link.download = `nigeria_${state.selectedIndicator}_chart.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  toast('Chart PNG exported');
+}
+
+// ============================================================
+// POPULATE FILTERS
+// ============================================================
+function populateFilters() {
+  const cats = [...new Set(INDICATORS.map(i => i.cat))];
+  const catSel = document.getElementById('filter-category');
+  cats.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; catSel.appendChild(o); });
+
+  function fillIndicatorSelect(selId, defaultId) {
+    const sel = document.getElementById(selId);
+    sel.innerHTML = '';
+    const cat = document.getElementById('filter-category').value;
+    const filtered = cat === 'all' ? INDICATORS : INDICATORS.filter(i => i.cat === cat);
+    filtered.forEach(ind => {
+      const o = document.createElement('option');
+      o.value = ind.id; o.textContent = `${ind.name} (${ind.units})`;
+      if (ind.id === defaultId) o.selected = true;
+      sel.appendChild(o);
+    });
+  }
+
+  fillIndicatorSelect('filter-indicator', 'cpi_headline');
+  fillIndicatorSelect('compare-a', 'cpi_headline');
+  fillIndicatorSelect('compare-b', 'fx_usd_ngn');
+  fillIndicatorSelect('corr-x', 'cpi_headline');
+  fillIndicatorSelect('corr-y', 'fx_usd_ngn');
+
+  // Re-populate on category change
+  catSel.addEventListener('change', () => {
+    fillIndicatorSelect('filter-indicator', state.selectedIndicator);
+    fillIndicatorSelect('compare-a', state.compareA);
+    fillIndicatorSelect('compare-b', state.compareB);
+    fillIndicatorSelect('corr-x', state.corrX);
+    fillIndicatorSelect('corr-y', state.corrY);
+  });
+}
+
+// ============================================================
+// EVENT HANDLERS
+// ============================================================
+function bindEvents() {
+  // Tabs
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+      tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById('sec-' + tab.dataset.section).classList.add('active');
+      // Render relevant section
+      const sec = tab.dataset.section;
+      if (sec === 'timeseries') renderTimeSeriesGrid();
+      else if (sec === 'comparison') renderComparison();
+      else if (sec === 'correlation') renderCorrelation();
+      else if (sec === 'datatable') renderDataTable();
+      else if (sec === 'events') renderEvents();
+    });
+  });
+
+  // Filter changes
+  document.getElementById('filter-range').addEventListener('change', (e) => {
+    const custom = e.target.value === 'custom';
+    document.getElementById('filter-from').style.display = custom ? '' : 'none';
+    document.getElementById('filter-to').style.display = custom ? '' : 'none';
+    renderAll();
+  });
+  document.getElementById('filter-from').addEventListener('change', renderAll);
+  document.getElementById('filter-to').addEventListener('change', renderAll);
+  document.getElementById('filter-indicator').addEventListener('change', (e) => {
+    state.selectedIndicator = e.target.value;
+    renderAll();
+  });
+
+  // Comparison selects
+  document.getElementById('compare-a').addEventListener('change', (e) => { state.compareA = e.target.value; renderComparison(); });
+  document.getElementById('compare-b').addEventListener('change', (e) => { state.compareB = e.target.value; renderComparison(); });
+  document.getElementById('btn-normalize').addEventListener('click', () => {
+    state.normalize = !state.normalize;
+    document.getElementById('btn-normalize').classList.toggle('active', state.normalize);
+    renderComparison();
+  });
+
+  // Correlation selects
+  document.getElementById('corr-x').addEventListener('change', (e) => { state.corrX = e.target.value; renderCorrelation(); });
+  document.getElementById('corr-y').addEventListener('change', (e) => { state.corrY = e.target.value; renderCorrelation(); });
+
+  // Toolbar buttons
+  document.getElementById('btn-ma').addEventListener('click', () => { state.showMA = !state.showMA; document.getElementById('btn-ma').classList.toggle('active', state.showMA); renderMainChart(); });
+  document.getElementById('btn-events-toggle').addEventListener('click', () => { state.showEvents = !state.showEvents; document.getElementById('btn-events-toggle').classList.toggle('active', state.showEvents); renderMainChart(); });
+  document.getElementById('btn-chart-png').addEventListener('click', exportChartPNG);
+  document.getElementById('btn-chart-csv').addEventListener('click', () => downloadCSV(state.selectedIndicator));
+  document.getElementById('btn-download-all').addEventListener('click', downloadAllCSV);
+  document.getElementById('btn-download-xlsx').addEventListener('click', downloadAllXLSX);
+  document.getElementById('btn-table-csv').addEventListener('click', () => downloadCSV(state.selectedIndicator));
+  document.getElementById('btn-table-xlsx').addEventListener('click', () => downloadXLSX(state.selectedIndicator));
+  document.getElementById('btn-refresh').addEventListener('click', () => { toast('Data refreshed'); renderAll(); });
+
+  // Theme
+  document.getElementById('btn-theme').addEventListener('click', () => {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    html.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+    // Re-render charts for theme colors
+    renderAll();
+  });
+  document.getElementById('btn-high-contrast').addEventListener('click', () => {
+    const html = document.documentElement;
+    html.setAttribute('data-theme', html.getAttribute('data-theme') === 'high-contrast' ? 'light' : 'high-contrast');
+    renderAll();
+  });
+
+  // Modal
+  document.getElementById('modal-close').addEventListener('click', () => document.getElementById('modal-overlay').classList.remove('open'));
+  document.getElementById('modal-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') document.getElementById('modal-overlay').classList.remove('open');
+  });
+}
+
+// ============================================================
+// RENDER ALL
+// ============================================================
+function renderAll() {
+  renderKPIRow();
+  renderNarrative();
+  renderMainChart();
+  // Only render active section
+  const activeTab = document.querySelector('.tab.active');
+  if (activeTab) {
+    const sec = activeTab.dataset.section;
+    if (sec === 'timeseries') renderTimeSeriesGrid();
+    else if (sec === 'comparison') renderComparison();
+    else if (sec === 'correlation') renderCorrelation();
+    else if (sec === 'datatable') renderDataTable();
+    else if (sec === 'events') renderEvents();
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  populateFilters();
+  bindEvents();
+
+  // Set initial active states
+  document.getElementById('btn-events-toggle').classList.add('active');
+
+  renderAll();
+});
+</script>
+</body>
+</html>

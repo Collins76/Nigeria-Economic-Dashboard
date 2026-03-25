@@ -1,0 +1,134 @@
+# ETL Schedule Configuration
+# ==========================
+# Defines update cadence for each indicator category.
+
+schedules:
+  daily:
+    time: "08:00"
+    timezone: "Africa/Lagos"
+    indicators:
+      - fx_usd_ngn
+      - fx_parallel
+      - fx_eur_ngn
+      - fx_gbp_ngn
+      - oil_price
+      - ngx_asi
+      - ngx_market_cap
+    sources:
+      - name: CBN Exchange Rates
+        url: https://www.cbn.gov.ng/rates/ExchRateByCurrency.asp
+        method: scrape
+      - name: Market Data Feed
+        url: ""
+        method: api
+
+  monthly:
+    day: 15  # Run on 15th of each month (NBS typically publishes mid-month)
+    time: "10:00"
+    indicators:
+      - cpi_headline
+      - cpi_core
+      - cpi_food
+      - foreign_reserves
+      - oil_production
+      - mpr
+      - tbill_91
+      - tbill_364
+      - pmi
+    sources:
+      - name: NBS CPI Report
+        url: https://nigerianstat.gov.ng
+        method: download
+      - name: CBN Statistical Bulletin
+        url: https://www.cbn.gov.ng/rates/mnymktind.asp
+        method: scrape
+
+  quarterly:
+    months: [1, 4, 7, 10]
+    day: 20
+    time: "10:00"
+    indicators:
+      - gdp_nominal
+      - gdp_real_growth
+      - unemployment_rate
+      - exports
+      - imports
+      - trade_balance
+      - govt_revenue
+      - govt_expenditure
+      - external_debt
+      - current_account
+    sources:
+      - name: NBS GDP Report
+        url: https://nigerianstat.gov.ng
+        method: download
+      - name: World Bank API
+        url: https://api.worldbank.org/v2/country/NGA
+        method: api
+      - name: CBN Balance of Payments
+        url: https://www.cbn.gov.ng
+        method: download
+
+  annual:
+    month: 3
+    day: 1
+    time: "10:00"
+    indicators:
+      - gdp_per_capita
+    sources:
+      - name: World Bank
+        url: https://api.worldbank.org/v2/country/NGA
+        method: api
+
+# Source endpoint mapping
+source_endpoints:
+  world_bank:
+    base_url: https://api.worldbank.org/v2/country/NGA/indicator
+    format: json
+    rate_limit: 30  # requests per minute
+    indicators:
+      gdp_nominal: NY.GDP.MKTP.CN
+      gdp_real_growth: NY.GDP.MKTP.KD.ZG
+      gdp_per_capita: NY.GDP.PCAP.CD
+      cpi_headline: FP.CPI.TOTL.ZG
+      unemployment_rate: SL.UEM.TOTL.ZS
+      exports: NE.EXP.GNFS.CN
+      imports: NE.IMP.GNFS.CN
+      external_debt: DT.DOD.DECT.CD
+      current_account: BN.CAB.XOKA.CD
+      foreign_reserves: FI.RES.TOTL.CD
+
+  cbn:
+    base_url: https://www.cbn.gov.ng
+    method: web_scrape
+    rate_limit: 10
+    indicators:
+      fx_usd_ngn: /rates/ExchRateByCurrency.asp
+      mpr: /rates/mnymktind.asp
+      foreign_reserves: /rates/reserves.asp
+      tbill_91: /rates/mnymktind.asp
+      tbill_364: /rates/mnymktind.asp
+
+  nbs:
+    base_url: https://nigerianstat.gov.ng
+    method: pdf_download
+    indicators:
+      cpi_headline: /elibrary/CPI
+      cpi_core: /elibrary/CPI
+      cpi_food: /elibrary/CPI
+      gdp_nominal: /elibrary/GDP
+      unemployment_rate: /elibrary/Labour
+
+  ngx:
+    base_url: https://ngxgroup.com
+    method: web_scrape
+    indicators:
+      ngx_asi: /market-data
+      ngx_market_cap: /market-data
+
+  opec:
+    base_url: https://www.opec.org
+    method: publication
+    indicators:
+      oil_production: /monthly-oil-market-report
+      oil_price: /basket-price

@@ -1,0 +1,209 @@
+openapi: 3.0.3
+info:
+  title: Nigeria Economic Dashboard API
+  description: |
+    REST API for Nigeria's macroeconomic indicators.
+    Serves time-series data, indicator metadata, and events.
+  version: 1.0.0
+  contact:
+    name: Dashboard Team
+
+servers:
+  - url: http://localhost:8000/api
+    description: Local development
+
+paths:
+  /indicators:
+    get:
+      summary: List all indicators
+      operationId: listIndicators
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by category (e.g., "GDP", "Inflation")
+      responses:
+        '200':
+          description: List of indicators
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Indicator'
+
+  /indicators/{id}:
+    get:
+      summary: Get indicator metadata
+      operationId: getIndicator
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Indicator metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Indicator'
+        '404':
+          description: Indicator not found
+
+  /timeseries/{indicator_id}:
+    get:
+      summary: Get time-series data for an indicator
+      operationId: getTimeseries
+      parameters:
+        - name: indicator_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Start date (ISO 8601)
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+          description: End date (ISO 8601)
+        - name: frequency
+          in: query
+          schema:
+            type: string
+            enum: [daily, monthly, quarterly, annual]
+          description: Resample frequency
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [json, csv]
+            default: json
+      responses:
+        '200':
+          description: Time series data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeSeries'
+            text/csv:
+              schema:
+                type: string
+
+  /events:
+    get:
+      summary: List economic events
+      operationId: listEvents
+      parameters:
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: tag
+          in: query
+          schema:
+            type: string
+          description: Filter by event tag
+      responses:
+        '200':
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+
+  /export:
+    get:
+      summary: Export all data
+      operationId: exportAll
+      parameters:
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [json, csv, xlsx]
+            default: json
+        - name: indicators
+          in: query
+          schema:
+            type: string
+          description: Comma-separated indicator IDs (default all)
+      responses:
+        '200':
+          description: Full data export
+
+components:
+  schemas:
+    Indicator:
+      type: object
+      properties:
+        id:
+          type: string
+          example: cpi_headline
+        name:
+          type: string
+          example: Headline Inflation (CPI)
+        category:
+          type: string
+          example: Inflation
+        frequency:
+          type: string
+          enum: [daily, monthly, quarterly, annual]
+        units:
+          type: string
+          example: "% YoY"
+        description:
+          type: string
+        source:
+          type: string
+        source_url:
+          type: string
+          format: uri
+
+    TimeSeries:
+      type: object
+      properties:
+        indicator_id:
+          type: string
+        dates:
+          type: array
+          items:
+            type: string
+            format: date
+        values:
+          type: array
+          items:
+            type: number
+        metadata:
+          $ref: '#/components/schemas/Indicator'
+
+    Event:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        title:
+          type: string
+        description:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string

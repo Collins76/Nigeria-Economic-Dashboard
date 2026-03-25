@@ -1,0 +1,19 @@
+version: "3.8"
+services:
+  dashboard:
+    build: .
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    volumes:
+      - ./data:/usr/share/nginx/html/data:ro
+
+  etl:
+    image: python:3.12-slim
+    working_dir: /app
+    volumes:
+      - ./etl:/app/etl
+      - ./data:/app/data
+      - ./logs:/app/logs
+    command: python etl/pipeline.py --schedule
+    restart: unless-stopped

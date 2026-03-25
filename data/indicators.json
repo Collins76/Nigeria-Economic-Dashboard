@@ -1,0 +1,291 @@
+{
+  "indicators": [
+    {
+      "id": "gdp_nominal",
+      "name": "Nominal GDP",
+      "category": "GDP",
+      "frequency": "quarterly",
+      "units": "NGN Trillion",
+      "description": "Total value of goods and services produced at current prices",
+      "source": "National Bureau of Statistics (NBS)",
+      "source_url": "https://nigerianstat.gov.ng"
+    },
+    {
+      "id": "gdp_real_growth",
+      "name": "Real GDP Growth Rate",
+      "category": "GDP",
+      "frequency": "quarterly",
+      "units": "%",
+      "description": "Year-on-year growth rate of real GDP adjusted for inflation",
+      "source": "NBS",
+      "source_url": "https://nigerianstat.gov.ng"
+    },
+    {
+      "id": "gdp_per_capita",
+      "name": "GDP Per Capita",
+      "category": "GDP",
+      "frequency": "annual",
+      "units": "USD",
+      "description": "Nominal GDP divided by total population",
+      "source": "World Bank / NBS",
+      "source_url": "https://data.worldbank.org"
+    },
+    {
+      "id": "cpi_headline",
+      "name": "Headline Inflation (CPI)",
+      "category": "Inflation",
+      "frequency": "monthly",
+      "units": "% YoY",
+      "description": "Year-on-year change in the Consumer Price Index (all items)",
+      "source": "NBS",
+      "source_url": "https://nigerianstat.gov.ng"
+    },
+    {
+      "id": "cpi_core",
+      "name": "Core Inflation",
+      "category": "Inflation",
+      "frequency": "monthly",
+      "units": "% YoY",
+      "description": "CPI excluding volatile food and energy items",
+      "source": "NBS",
+      "source_url": "https://nigerianstat.gov.ng"
+    },
+    {
+      "id": "cpi_food",
+      "name": "Food Inflation",
+      "category": "Inflation",
+      "frequency": "monthly",
+      "units": "% YoY",
+      "description": "Year-on-year change in food component of CPI",
+      "source": "NBS",
+      "source_url": "https://nigerianstat.gov.ng"
+    },
+    {
+      "id": "unemployment_rate",
+      "name": "Unemployment Rate",
+      "category": "Labour",
+      "frequency": "quarterly",
+      "units": "%",
+      "description": "Percentage of the labour force that is unemployed",
+      "source": "NBS",
+      "source_url": "https://nigerianstat.gov.ng"
+    },
+    {
+      "id": "fx_usd_ngn",
+      "name": "Exchange Rate (USD/NGN)",
+      "category": "Exchange Rates",
+      "frequency": "daily",
+      "units": "NGN per USD",
+      "description": "Official exchange rate of Nigerian Naira to US Dollar",
+      "source": "CBN",
+      "source_url": "https://www.cbn.gov.ng"
+    },
+    {
+      "id": "fx_parallel",
+      "name": "Parallel Market Rate (USD/NGN)",
+      "category": "Exchange Rates",
+      "frequency": "daily",
+      "units": "NGN per USD",
+      "description": "Unofficial parallel (black market) exchange rate",
+      "source": "Market Reports",
+      "source_url": ""
+    },
+    {
+      "id": "fx_eur_ngn",
+      "name": "Exchange Rate (EUR/NGN)",
+      "category": "Exchange Rates",
+      "frequency": "daily",
+      "units": "NGN per EUR",
+      "description": "Official exchange rate of Naira to Euro",
+      "source": "CBN",
+      "source_url": "https://www.cbn.gov.ng"
+    },
+    {
+      "id": "fx_gbp_ngn",
+      "name": "Exchange Rate (GBP/NGN)",
+      "category": "Exchange Rates",
+      "frequency": "daily",
+      "units": "NGN per GBP",
+      "description": "Official exchange rate of Naira to British Pound",
+      "source": "CBN",
+      "source_url": "https://www.cbn.gov.ng"
+    },
+    {
+      "id": "mpr",
+      "name": "Monetary Policy Rate (MPR)",
+      "category": "Interest Rates",
+      "frequency": "monthly",
+      "units": "%",
+      "description": "CBN benchmark interest rate for monetary policy",
+      "source": "CBN",
+      "source_url": "https://www.cbn.gov.ng"
+    },
+    {
+      "id": "tbill_91",
+      "name": "91-Day Treasury Bill Rate",
+      "category": "Interest Rates",
+      "frequency": "monthly",
+      "units": "%",
+      "description": "Yield on 91-day Nigerian Treasury Bills",
+      "source": "CBN / FMDQ",
+      "source_url": "https://www.cbn.gov.ng"
+    },
+    {
+      "id": "tbill_364",
+      "name": "364-Day Treasury Bill Rate",
+      "category": "Interest Rates",
+      "frequency": "monthly",
+      "units": "%",
+      "description": "Yield on 364-day Nigerian Treasury Bills",
+      "source": "CBN / FMDQ",
+      "source_url": "https://www.cbn.gov.ng"
+    },
+    {
+      "id": "exports",
+      "name": "Total Exports",
+      "category": "Trade",
+      "frequency": "quarterly",
+      "units": "NGN Billion",
+      "description": "Total value of goods exported",
+      "source": "NBS / CBN",
+      "source_url": "https://nigerianstat.gov.ng"
+    },
+    {
+      "id": "imports",
+      "name": "Total Imports",
+      "category": "Trade",
+      "frequency": "quarterly",
+      "units": "NGN Billion",
+      "description": "Total value of goods imported",
+      "source": "NBS / CBN",
+      "source_url": "https://nigerianstat.gov.ng"
+    },
+    {
+      "id": "trade_balance",
+      "name": "Trade Balance",
+      "category": "Trade",
+      "frequency": "quarterly",
+      "units": "NGN Billion",
+      "description": "Exports minus imports",
+      "source": "NBS / CBN",
+      "source_url": "https://nigerianstat.gov.ng"
+    },
+    {
+      "id": "govt_revenue",
+      "name": "Government Revenue",
+      "category": "Fiscal",
+      "frequency": "quarterly",
+      "units": "NGN Billion",
+      "description": "Total federally collected revenue",
+      "source": "NBS / Budget Office",
+      "source_url": "https://nigerianstat.gov.ng"
+    },
+    {
+      "id": "govt_expenditure",
+      "name": "Government Expenditure",
+      "category": "Fiscal",
+      "frequency": "quarterly",
+      "units": "NGN Billion",
+      "description": "Total government spending",
+      "source": "NBS / Budget Office",
+      "source_url": "https://nigerianstat.gov.ng"
+    },
+    {
+      "id": "foreign_reserves",
+      "name": "Foreign Reserves",
+      "category": "External",
+      "frequency": "monthly",
+      "units": "USD Billion",
+      "description": "Gross external reserves held by the CBN",
+      "source": "CBN",
+      "source_url": "https://www.cbn.gov.ng"
+    },
+    {
+      "id": "external_debt",
+      "name": "External Debt",
+      "category": "External",
+      "frequency": "quarterly",
+      "units": "USD Billion",
+      "description": "Total external debt stock of the Federal Government",
+      "source": "DMO / CBN",
+      "source_url": "https://www.dmo.gov.ng"
+    },
+    {
+      "id": "current_account",
+      "name": "Current Account Balance",
+      "category": "External",
+      "frequency": "quarterly",
+      "units": "USD Billion",
+      "description": "Current account balance of the balance of payments",
+      "source": "CBN",
+      "source_url": "https://www.cbn.gov.ng"
+    },
+    {
+      "id": "oil_production",
+      "name": "Crude Oil Production",
+      "category": "Commodity",
+      "frequency": "monthly",
+      "units": "Million bpd",
+      "description": "Average daily crude oil production including condensates",
+      "source": "NNPC / OPEC",
+      "source_url": "https://www.nnpcgroup.com"
+    },
+    {
+      "id": "oil_price",
+      "name": "Bonny Light Crude Price",
+      "category": "Commodity",
+      "frequency": "daily",
+      "units": "USD/barrel",
+      "description": "Price of Nigerian Bonny Light crude oil",
+      "source": "OPEC / Market Data",
+      "source_url": ""
+    },
+    {
+      "id": "ngx_asi",
+      "name": "NGX All-Share Index",
+      "category": "Financial Markets",
+      "frequency": "daily",
+      "units": "Points",
+      "description": "Nigerian Exchange Group All-Share Index",
+      "source": "NGX",
+      "source_url": "https://ngxgroup.com"
+    },
+    {
+      "id": "ngx_market_cap",
+      "name": "NGX Market Capitalization",
+      "category": "Financial Markets",
+      "frequency": "daily",
+      "units": "NGN Trillion",
+      "description": "Total market capitalization of all listed equities on NGX",
+      "source": "NGX",
+      "source_url": "https://ngxgroup.com"
+    },
+    {
+      "id": "pmi",
+      "name": "Purchasing Managers Index",
+      "category": "Leading Indicators",
+      "frequency": "monthly",
+      "units": "Index",
+      "description": "Stanbic IBTC PMI — above 50 indicates expansion",
+      "source": "Stanbic IBTC / S&P Global",
+      "source_url": ""
+    }
+  ],
+  "events": [
+    {"date": "2023-05-29", "title": "President Tinubu Inaugurated", "description": "New administration takes office with reform agenda", "tags": ["political", "policy"]},
+    {"date": "2023-06-01", "title": "Fuel Subsidy Removal", "description": "Government removes petrol subsidy, prices rise from ~NGN185 to NGN500+", "tags": ["fiscal", "energy", "inflation"]},
+    {"date": "2023-06-14", "title": "FX Unification", "description": "CBN unifies multiple exchange rate windows; Naira depreciates sharply", "tags": ["fx", "monetary"]},
+    {"date": "2023-07-25", "title": "MPR Raised to 18.75%", "description": "CBN raises monetary policy rate by 25bps", "tags": ["monetary", "interest"]},
+    {"date": "2023-09-26", "title": "MPR Raised to 18.75%", "description": "MPC holds rate steady at September meeting", "tags": ["monetary"]},
+    {"date": "2024-02-27", "title": "MPR Raised to 22.75%", "description": "CBN raises MPR by 400bps in aggressive tightening", "tags": ["monetary", "interest"]},
+    {"date": "2024-03-26", "title": "MPR Raised to 24.75%", "description": "Further 200bps hike as inflation accelerates", "tags": ["monetary", "interest"]},
+    {"date": "2024-05-21", "title": "MPR Raised to 26.25%", "description": "Additional 150bps tightening", "tags": ["monetary", "interest"]},
+    {"date": "2024-07-23", "title": "MPR Raised to 26.75%", "description": "50bps hike amid persistent inflation", "tags": ["monetary"]},
+    {"date": "2024-11-26", "title": "MPR Raised to 27.50%", "description": "MPC raises rate by 25bps", "tags": ["monetary"]},
+    {"date": "2025-02-18", "title": "MPR at 27.50%", "description": "MPC holds rate steady", "tags": ["monetary"]},
+    {"date": "2023-08-01", "title": "Naira Redesign Aftermath", "description": "Continued effects of late-2022 naira redesign policy on cash supply", "tags": ["monetary", "fx"]},
+    {"date": "2024-01-29", "title": "Naira Crashes to 1500/USD", "description": "Naira hits record low on official market amid FX scarcity", "tags": ["fx"]},
+    {"date": "2024-10-01", "title": "Minimum Wage Increase", "description": "New national minimum wage of NGN70,000 takes effect", "tags": ["labour", "fiscal"]},
+    {"date": "2025-07-01", "title": "Tax Reform Bills Expected", "description": "Proposed tax reform legislation under consideration", "tags": ["fiscal", "policy"]}
+  ]
+}
